@@ -1,0 +1,7 @@
+Cython
+pyprind
+psutil
+numpy
+pycocotools
+matplotlib
+Shapely

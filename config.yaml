@@ -1,0 +1,6 @@
+image_tar_name: simple.tar.gz                           # 打包图片的压缩包名字，可随意指定
+json_tar_name: simple_json.tar.gz                       # 打包json文件的压缩包名字，可随意指定
+nfs_base_path: /mntdlws/nfs                             # 目前数据集存放的根路径
+user: dlwsadmin                                         # 连接到数据平台服务器的用户名
+host: apulis-sz-dev-worker01.sigsus.cn                  # 连接到数据平台服务器的域名
+identity_file: /home/Jiangfeng.Han/DataConvert/id_rsa   # 连接到数据平台服务器的私钥，需绝对路径
