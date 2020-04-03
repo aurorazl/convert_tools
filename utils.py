@@ -1,10 +1,19 @@
 import os
 import subprocess
 import numpy as np
+import pyprind
+import re
+import shutil
+import glob
+
 
 def check_path_exist(path):
     if not os.path.exists(path):
         raise Exception("path {} not found".format(path))
+
+def mkdirs(path):
+    if not os.path.exists(path):
+        os.makedirs(path,exist_ok=True)
 
 def remove_local_file(path):
     if os.path.exists(path):
@@ -83,3 +92,90 @@ def bbox_overlaps(bboxes1, bboxes2, mode='iou'):
     if exchange:
         ious = ious.T
     return ious
+
+def get_dir_path_max_num(dir_path, prefix,args):
+    if not os.path.exists(dir_path):
+        os.mkdir(dir_path)
+    dir_list = os.listdir(dir_path)
+    max_num = 0
+    pbar = pyprind.ProgBar(len(dir_list), monitor=True,title="counting dir path on specified prefix {} number".format(prefix))
+    gen_pattern = re.compile(r"(\S*?)(\d+)\.(xml|json|txt)")
+    for i in dir_list:
+        res = gen_pattern.match(i)
+        if res:
+            if res.groups()[0] !=args.anno_after_prefix + prefix:
+                continue
+            num = int(res.groups()[1])
+            if num > max_num:
+                max_num = num
+        pbar.update()
+    return max_num
+
+def gen_image_name_list(anno_files_path,image_files_path,json_anno_path,prefix,args):
+    src_list = os.listdir(image_files_path)
+    max_num = get_dir_path_max_num(json_anno_path, prefix,args)
+    name_dict = {}
+    pb = pyprind.ProgBar(len(src_list), monitor=True,title="counting src path specified prefix {} number".format(prefix))
+    gen_pattern = re.compile(r"{}(\d+)\.(jpg)".format(args.image_before_prefix))
+    for one in src_list:
+        res = gen_pattern.match(one)
+        if res:
+            image_id = res.groups()[0]
+            if not check_anno_and_image_both_exist(anno_files_path,image_files_path,image_id,args):
+                continue
+            if  max_num == 0:
+                new_image_id = int(image_id)
+            else:
+                max_num += 1
+                new_image_id = max_num
+            name_dict[new_image_id] = image_id
+        pb.update()
+    print("start to process %s picture" % len(name_dict))
+    return name_dict
+
+def check_anno_and_image_both_exist(anno_files_path,image_files_path,image_id,args):
+    if not os.path.exists(os.path.join(anno_files_path,"{}{}.{}".format(args.anno_before_prefix,image_id,args.anno_before_suffix))):
+        return False
+    return True
+
+def get_ocr_annotation(label_path: str) -> tuple:
+    boxes = []
+    text_tags = []
+    with open(label_path, encoding='utf-8', mode='r') as f:
+        for line in f.readlines():
+            params = line.strip().strip('\ufeff').strip('\xef\xbb\xbf').split(',')
+            try:
+                if len(params)>8:
+                    label = params[-1]
+                else:
+                    label = params[8]
+                text_tags.append(label)
+                # if label == '*' or label == '###':
+                x1, y1, x2, y2, x3, y3, x4, y4 = list(map(float, params[:8]))
+                boxes.append([[x1, y1], [x2, y2], [x3, y3], [x4, y4]])
+            except:
+                print('load label failed on {}'.format(label_path))
+    return boxes,text_tags
+
+def convert_ocr_annotation_list_to_str(bboxs):
+    string=""
+    for bbox in bboxs:
+        [[x1, y1], [x2, y2], [x3, y3], [x4, y4],text_tag] = bbox
+        string+=",".join([str(x) for x in [x1, y1, x2, y2, x3, y3, x4, y4, text_tag]])
+        string+="\n"
+    return string
+
+def calculate_quadrangle_area(bbox):
+    coord = np.array(bbox).reshape((4, 2))
+    temp_det = 0
+    for idx in range(3):
+        temp = np.array([coord[idx], coord[idx + 1]])
+        temp_det += np.linalg.det(temp)
+    temp_det += np.linalg.det(np.array([coord[-1], coord[0]]))
+    return temp_det * 0.5
+
+def check_anno_image_number(voc_anno_path,voc_image_path,args):
+    anno_list = glob.glob(os.path.join(voc_anno_path,"*.{}".format(args.anno_before_suffix)))
+    image_list = glob.glob(os.path.join(voc_image_path,"*.{}".format(args.image_before_suffix)))
+    if(len(anno_list)!=len(image_list)):
+        raise Exception("anno number not equal image number")

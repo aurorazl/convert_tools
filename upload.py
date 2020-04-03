@@ -73,12 +73,67 @@ def upload_dataset_from_coco(coco_anno_path,image_path,project_id,dataset_id,use
     with cd(out_json_path):
         upload_dataset("images","images",project_id,dataset_id,verbose,ignore_image)
 
+def upload_dataset_from_voc(voc_path,project_id,dataset_id,user_id,verbose = False,ignore_image=False,args=None):
+    voc_anno_path = os.path.join(voc_path,"Annotations")
+    voc_image_path = os.path.join(voc_path,"JPEGImages")
+    utils.check_path_exist(voc_anno_path)
+    utils.check_path_exist(voc_image_path)
+    out_json_path = os.path.join("./","template_for_convert")
+    utils.remove_directiry(out_json_path)
+    os.system("mkdir %s"% out_json_path)
+    label_tool.merge_voc_dataset_to_json_dataset(voc_anno_path,voc_image_path,out_json_path,args=args)
+    label_tool.generate_commit_json(out_json_path,user_id,args.base_category_num)
+    with cd(out_json_path):
+        upload_dataset("images","images",project_id,dataset_id,verbose,ignore_image)
+
+def upload_dataset_from_ocr(ocr_anno_path,ocr_image_path,project_id,dataset_id,user_id,verbose = False,ignore_image=False,args=None):
+    utils.check_path_exist(ocr_anno_path)
+    utils.check_path_exist(ocr_image_path)
+    out_json_path = os.path.join("./","template_for_convert")
+    utils.remove_directiry(out_json_path)
+    os.system("mkdir %s"% out_json_path)
+    label_tool.merge_ocr_to_json(ocr_anno_path,ocr_image_path,out_json_path,args=args)
+    label_tool.generate_commit_json(out_json_path,user_id,args.base_category_num)
+    with cd(out_json_path):
+        upload_dataset("images","images",project_id,dataset_id,verbose,ignore_image)
+
 def upload_model_predict_result_from_list(list_file_path,project_id,dataset_id,verbose=True,args=None):
     utils.check_path_exist(list_file_path)
     out_json_path = os.path.join("./", "template_for_convert")
     utils.remove_directiry(out_json_path)
     os.system("mkdir %s" % out_json_path)
     label_tool.module_predict_segmentation_list_to_json(list_file_path,out_json_path,args.base_category_num)
+    with cd(out_json_path):
+        upload_model_predict_result("images",project_id,dataset_id,verbose)
+
+def upload_model_predict_result_from_coco(coco_file_path,project_id,dataset_id,verbose=True,args=None):
+    utils.check_path_exist(coco_file_path)
+    out_json_path = os.path.join("./", "template_for_convert")
+    utils.remove_directiry(out_json_path)
+    os.system("mkdir %s" % out_json_path)
+    args.ignore_image = True
+    label_tool.merge_coco_to_json_dataset(coco_file_path,"",out_json_path,args=args)
+    with cd(out_json_path):
+        upload_model_predict_result("images",project_id,dataset_id,verbose)
+
+def upload_model_predict_result_from_voc(voc_anno_path,voc_image_path,project_id,dataset_id,verbose=True,args=None):
+    utils.check_path_exist(voc_anno_path)
+    out_json_path = os.path.join("./", "template_for_convert")
+    utils.remove_directiry(out_json_path)
+    os.system("mkdir %s" % out_json_path)
+    args.ignore_image = True
+    label_tool.merge_voc_dataset_to_json_dataset(voc_anno_path,voc_image_path,out_json_path,args=args)
+    with cd(out_json_path):
+        upload_model_predict_result("images",project_id,dataset_id,verbose)
+
+def upload_model_predict_result_from_ocr(ocr_anno_path,ocr_image_path,project_id,dataset_id,verbose=True,args=None):
+    utils.check_path_exist(ocr_anno_path)
+    utils.check_path_exist(ocr_image_path)
+    out_json_path = os.path.join("./", "template_for_convert")
+    utils.remove_directiry(out_json_path)
+    os.system("mkdir %s" % out_json_path)
+    args.ignore_image = True
+    label_tool.merge_ocr_to_json(ocr_anno_path,ocr_image_path,out_json_path,args=args)
     with cd(out_json_path):
         upload_model_predict_result("images",project_id,dataset_id,verbose)
 
@@ -101,12 +156,42 @@ def run_command(args, command, nargs, parser):
             print("upload_dataset_from_coco [coco_anno_path] [image_path]  [project_id] [dataset_id] [user_id]")
         else:
             upload_dataset_from_coco(nargs[0], nargs[1],nargs[2],nargs[3],nargs[4],args.verbose,args.ignore_image,args)
+    elif command == "upload_dataset_from_voc":
+        if len(nargs) != 4:
+            parser.print_help()
+            print("upload_dataset_from_voc [voc_path] [project_id] [dataset_id] [user_id]")
+        else:
+            upload_dataset_from_voc(nargs[0],nargs[1],nargs[2],nargs[3],args.verbose,args.ignore_image,args)
+    elif command == "upload_dataset_from_ocr":
+        if len(nargs) != 5:
+            parser.print_help()
+            print("upload_dataset_from_ocr [ocr_anno_path] [ocr_image_path] [project_id] [dataset_id] [user_id]")
+        else:
+            upload_dataset_from_ocr(nargs[0],nargs[1],nargs[2],nargs[3],nargs[4],args.verbose,args.ignore_image,args)
     elif command == "upload_model_predict_result_from_list":
         if len(nargs) != 3:
             parser.print_help()
-            print("upload_model_predict_result_from_list [list_file_path]  [project_id] [dataset_id]")
+            print("upload_model_predict_result_from_list [list_file_path] [project_id] [dataset_id]")
         else:
             upload_model_predict_result_from_list(nargs[0], nargs[1],nargs[2],args.verbose,args)
+    elif command == "upload_model_predict_result_from_coco":
+        if len(nargs) != 3:
+            parser.print_help()
+            print("upload_model_predict_result_from_coco [coco_file_path] [project_id] [dataset_id]")
+        else:
+            upload_model_predict_result_from_coco(nargs[0], nargs[1],nargs[2],args.verbose,args)
+    elif command == "upload_model_predict_result_from_voc":
+        if len(nargs) != 4:
+            parser.print_help()
+            print("upload_model_predict_result_from_voc [voc_anno_path] [voc_image_path] [project_id] [dataset_id]")
+        else:
+            upload_model_predict_result_from_voc(nargs[0], nargs[1],nargs[2],nargs[3],args.verbose,args)
+    elif command == "upload_model_predict_result_from_ocr":
+        if len(nargs) != 4:
+            parser.print_help()
+            print("upload_model_predict_result_from_ocr [ocr_anno_path] [project_id] [dataset_id]")
+        else:
+            upload_model_predict_result_from_ocr(nargs[0], nargs[1],nargs[2],nargs[3],args.verbose,args)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='upload.py',
@@ -141,6 +226,14 @@ if __name__ == '__main__':
                         help="base_category_num",
                         action="store",type=int
                         )
+    parser.add_argument("--anno-before-prefix","-abp", default="",help="before anno prefix",action="store")
+    parser.add_argument("--anno-after-prefix", "-aap",default="",help="after anno prefix",action="store")
+    parser.add_argument("--anno-before-suffix","-abs", default="",help="before anno suffix",action="store")
+    parser.add_argument("--anno-after-suffix", "-aas",default="",help="after anno suffix",action="store")
+    parser.add_argument("--image-before-prefix","-ibp", default="",help="before image prefix",action="store")
+    parser.add_argument("--image-after-prefix","-iap", default="",help="after image prefix",action="store")
+    parser.add_argument("--image-before-suffix","-ibs", default="jpg",help="before image suffix",action="store")
+    parser.add_argument("--image-after-suffix", "-ias",default="jpg",help="after image suffix",action="store")
     args = parser.parse_args()
     command = args.command
     nargs = args.nargs

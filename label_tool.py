@@ -23,10 +23,13 @@ from PIL import Image
 from PIL import ImageDraw
 import matplotlib.pyplot as plt
 import cv2
+import utils
+import glob
+import requests
 
-filename_pattern = re.compile(r"(\S+)\.(xml|json|jpg)")
+filename_pattern = re.compile(r"(\S+)\.(xml|json|jpg|txt)")
 image_pattern = re.compile(r"(\S+)\.(jpg)")
-gen_pattern = re.compile(r"(\S*?)(\d+)\.(xml|json)")
+gen_pattern = re.compile(r"(\S*?)(\d+)\.(xml|json|txt)")
 number_pattern = re.compile(r"(\S*?)(\d+)")
 category_map = {1:96,2:97,3:49,4:98,5:99}
 
@@ -46,19 +49,26 @@ def get_value(root, name):
     except Exception:
         return re
 
+coco = None
 def get_class_number(name):
     number = 0
     if name == "work_uniformm":
         name = "work_uniform"
     if name == "othe_hat":
         name = "other_hat"
-    with open(os.path.join("meta.json"), "r") as f:
-        coco = json.load(f)
-    for one in coco["categories"]:
+    try:
+        global coco
+        if not coco:
+            res = requests.get(url="https://apulis-sz-dev-worker01.sigsus.cn/api/labels")
+            coco = json.loads(res.content)["categories"]
+    except Exception:
+        with open(os.path.join("meta.json"), "r") as f:
+            coco = json.load(f)["categories"]
+    for one in coco:
         if one.get("name")==name:
             number = int(one.get("id",0))
-    if number==0:
-        print(name)
+    # if number==0:
+    #     print(name)
     return number
 
 def get_class_name(number,categories=None):
@@ -105,27 +115,6 @@ def check_path_exit_or_raise_exception(*args,**kwargs):
         if not os.path.exists(i):
             raise Exception("{} not found!!!".format(i))
 
-def quick_sort(li):
-    _quick_sort(li,0,len(li)-1)
-def _quick_sort(li,left,right):
-    if left < right:
-        mid = partition(li,left,right)
-        _quick_sort(li,left,mid-1)
-        _quick_sort(li,mid+1,right)
-def partition(li,left,right):
-    i = random.randint(left,right)
-    li[left],li[i]=li[i],li[left]
-    tmp = li[left]
-    while left < right:
-        while left<right and li[right]>=tmp:
-            right -= 1
-        li[left]=li[right]
-        while left < right and li[left]<= tmp:
-            left += 1
-        li[right] = li[left]
-    li[left] = tmp
-    return left
-
 map_path = {}
 pbar = None
 def get_image_name_list(src_path):
@@ -170,8 +159,7 @@ def one_voc_format_to_json_format(src_path,file_path,image_id):
 
 def voc_format_to_json_format(src_path,dir_path):
     image_id_list = []
-    if not os.path.exists(os.path.join(dir_path,"images")):
-        os.mkdir(os.path.join(dir_path,"images"))
+    utils.mkdirs(os.path.join(dir_path,"images"))
     for image_id in get_image_name_list(src_path):
         image_id_list.append(image_id)
         json_dict = one_voc_format_to_json_format(src_path,image_id+".xml",image_id)
@@ -217,67 +205,20 @@ def json_format_to_voc_format(src_path,dir_path):
             f.write(minidom.parseString(tostring(elem)).toprettyxml().replace('<?xml version="1.0" ?>\n', ""))
         pbar.update()
 
-def check_anno_image_number(voc_anno_path,voc_image_path):
-    anno_list = os.listdir(voc_anno_path)
-    image_list = os.listdir(voc_image_path)
-    if(len(anno_list)!=len(image_list)):
-        raise Exception("anno number not equal image number")
-
-def get_dir_path_max_num(dir_path,prefix):
-    if not os.path.exists(dir_path):
-        os.mkdir(dir_path)
-    dir_list = os.listdir(dir_path)
-    if not os.path.exists(dir_path):
-        os.mkdir(dir_path)
-    max_num = 0
-    pbar = pyprind.ProgBar(len(dir_list), monitor=True,title="counting dir path on specified prefix {} number".format(prefix))
-    for i in dir_list:
-        res = gen_pattern.match(i)
-        if res:
-            if res.groups()[0] != prefix:
-                continue
-            num = int(res.groups()[1])
-            if num > max_num:
-                max_num = num
-        pbar.update()
-    return max_num
-
-def gen_image_name_list(voc_anno_path,voc_image_path,json_anno_path,json_image_path,prefix,args):
-    src_list = os.listdir(voc_anno_path)
-    max_num = get_dir_path_max_num(json_anno_path,prefix)
-    name_list = []
-    pb = pyprind.ProgBar(len(src_list),monitor=True,title="counting src path specified prefix {} number".format(prefix))
-    for one in src_list:
-        res = gen_pattern.match(one)
-        if res:
-            image_id = os.path.splitext(one)
-            if not prefix and max_num==0:
-                new_image_id = str(image_id)
-            else:
-                max_num += 1
-                new_image_id = prefix+str(max_num)
-            new_image_path = new_image_id +".jpg"
-            if args and not args.ignore_image:
-                shutil.copyfile(os.path.join(voc_image_path,str(image_id)+".jpg"), os.path.join(json_image_path,new_image_path))
-            new_anno_name = prefix + str(max_num)
-            name_list.append(new_anno_name)
-            map_path[new_anno_name] = one
-        pb.update()
-    print("start to process %s picture"%len(name_list))
-    global pbar
-    pbar = pyprind.ProgBar(len(name_list),monitor=True,title="converting".format(prefix))
-    return name_list
-
 def merge_voc_dataset_to_json_dataset(voc_anno_path,voc_image_path,json_path,prefix="",args=None):
-    check_anno_image_number(voc_anno_path,voc_image_path)
+    args.anno_before_suffix = "xml" if not args.anno_before_suffix else args.anno_before_suffix
+    utils.check_anno_image_number(voc_anno_path,voc_image_path,args)
     image_id_list = []
     json_anno_path = os.path.join(json_path,"images")
-    if not os.path.exists(json_anno_path):
-        os.makedirs(json_anno_path,exist_ok=True)
-    for image_id in gen_image_name_list(voc_anno_path,voc_image_path,json_anno_path,json_anno_path,prefix,args):
-        image_id_list.append(image_id)
-        json_dict = one_voc_format_to_json_format(voc_anno_path,map_path[image_id], image_id)
-        dir_file = os.path.join(json_path, "images", str(image_id) + ".json")
+    utils.mkdirs(json_anno_path)
+    new_image_id_list = utils.gen_image_name_list(voc_anno_path, voc_image_path, json_anno_path, prefix, args)
+    pbar = pyprind.ProgBar(len(new_image_id_list), monitor=True, title="writing to file")
+    for new_image_id, old_image_id in new_image_id_list.items():
+        image_id_list.append(new_image_id)
+        json_dict = one_voc_format_to_json_format(voc_anno_path,args.anno_before_prefix + str(old_image_id) + ".xml", args.anno_after_prefix + str(new_image_id))
+        dir_file = os.path.join(json_path, "images",args.anno_after_prefix + str(new_image_id) + ".json")
+        if args and not args.ignore_image:
+            shutil.copyfile(os.path.join(voc_image_path,args.image_before_prefix + str(old_image_id) + ".jpg"),os.path.join(json_anno_path,args.image_after_prefix + str(new_image_id) + ".jpg"))
         with open(dir_file, "w+") as f:
             f.write(json.dumps(json_dict,indent=4, separators=(',', ':')))
         pbar.update()
@@ -292,15 +233,19 @@ def merge_voc_dataset_to_json_dataset(voc_anno_path,voc_image_path,json_path,pre
     shutil.copyfile("./meta.json",os.path.join(json_path,"meta.json"))
 
 def merge_json_dataset_to_voc_dataset(json_path,voc_anno_path,voc_image_path,prefix="",args=None):
-    if not os.path.exists(voc_image_path):
-        os.mkdir(voc_image_path)
+    args.anno_before_suffix = "json" if not args.anno_before_suffix else args.anno_before_suffix
+    utils.mkdirs(voc_image_path)
     json_anno_path = os.path.join(json_path, "images")
-    for image_id in gen_image_name_list(json_anno_path,json_anno_path,voc_anno_path,voc_image_path, prefix,args):
-        file_path = os.path.join(json_anno_path,map_path[image_id])
+    image_id_list = utils.gen_image_name_list(json_anno_path, json_anno_path, voc_anno_path, prefix, args)
+    pbar = pyprind.ProgBar(len(image_id_list), monitor=True, title="writing to file")
+    for new_image_id, old_image_id in image_id_list.items():
+        if args and not args.ignore_image:
+            shutil.copyfile(os.path.join(json_anno_path,args.image_before_prefix + str(old_image_id) + ".jpg"),os.path.join(voc_image_path,args.image_after_prefix + str(new_image_id) + ".jpg"))
+        file_path = os.path.join(json_anno_path,args.anno_before_prefix + str(old_image_id) + "." + args.anno_before_suffix)
         with open(file_path,"r") as f:
             coco_dict = json.load(f)
-        elem = one_json_format_to_voc_format(coco_dict,image_id+".jpg",voc_image_path)
-        dir_file = os.path.join(voc_anno_path, str(image_id) + ".xml")
+        elem = one_json_format_to_voc_format(coco_dict, args.image_after_prefix + str(new_image_id)+".jpg",voc_image_path)
+        dir_file = os.path.join(voc_anno_path, args.anno_after_prefix + str(new_image_id) + ".xml")
         with open(dir_file,"w+") as f:
             f.write(minidom.parseString(tostring(elem)).toprettyxml().replace('<?xml version="1.0" ?>\n', ""))
         pbar.update()
@@ -332,6 +277,7 @@ def get_exists_coco_max_num(coco_output_path,coco,prefix):
     return max_num
 
 def merge_voc_dataset_to_coco_dataset(voc_anno_path,voc_image_path,coco_output_path,coco_image_path,prefix="",args=None):
+    utils.mkdirs(coco_image_path)
     max_num = 0
     if os.path.exists(coco_output_path):
         coco = {"images": [], "annotations": []}
@@ -342,11 +288,10 @@ def merge_voc_dataset_to_coco_dataset(voc_anno_path,voc_image_path,coco_output_p
             coco["images"]=[]
             coco["annotations"]=[]
     src_list = os.listdir(voc_anno_path)
-    global pbar
     pbar = pyprind.ProgBar(len(src_list),monitor=True,title="converting voc to coco")
     for one in src_list:
         if gen_pattern.match(one):
-            image_id = os.path.splitext(one)
+            image_id = os.path.splitext(one)[0]
             if not prefix and max_num==0:
                 new_image_id = image_id
             else:
@@ -367,14 +312,12 @@ def get_file_name_from_coco(li,image_id):
             return i.get("file_name")
 
 def merge_coco_to_voc_dataset(coco_file_path,coco_image_path,voc_anno_path,voc_image_path,prefix="",args=None):
-    if not os.path.exists(voc_image_path):
-        os.mkdir(voc_image_path)
+    utils.mkdirs(voc_image_path)
     coco = COCO(coco_file_path)
     categories = coco.dataset.get('categories')
     ImgIDs = list(coco.imgs.keys())
-    global pbar
-    pbar = pyprind.ProgBar(len(ImgIDs),monitor=True,title="converting coco to voc")
-    max_num = get_dir_path_max_num(voc_anno_path, prefix)
+    max_num = utils.get_dir_path_max_num(voc_anno_path, prefix,args)
+    pbar = pyprind.ProgBar(len(ImgIDs), monitor=True, title="converting coco to voc")
     for ImgID in ImgIDs:
         if not prefix and max_num==0:
             new_image_id = str(ImgID)
@@ -387,19 +330,15 @@ def merge_coco_to_voc_dataset(coco_file_path,coco_image_path,voc_anno_path,voc_i
         old_image_name = get_file_name_from_coco(json_dict["images"], ImgID)
         elem = one_json_format_to_voc_format(json_dict, new_image_id + ".jpg",voc_image_path,categories)
         dir_file = os.path.join(voc_anno_path, new_image_id + ".xml")
-        if not os.path.exists(os.path.join(coco_image_path,old_image_name)) and not args.ignore_image:
-            print(os.path.join(coco_image_path,old_image_name),"not exists")
-        else:
-            with open(dir_file, "w+") as f:
-                f.write(minidom.parseString(tostring(elem)).toprettyxml().replace('<?xml version="1.0" ?>\n', ""))
-            if args and not args.ignore_image:
-                shutil.copyfile(os.path.join(coco_image_path,old_image_name),os.path.join(voc_image_path,new_image_id+".jpg"))
+        with open(dir_file, "w+") as f:
+            f.write(minidom.parseString(tostring(elem)).toprettyxml().replace('<?xml version="1.0" ?>\n', ""))
+        if args and not args.ignore_image:
+            shutil.copyfile(os.path.join(coco_image_path,old_image_name),os.path.join(voc_image_path,new_image_id+".jpg"))
         pbar.update()
 
 def merge_coco_to_json_dataset(coco_file_path,coco_image_path,json_path,prefix="",args=None):
     json_anno_path = os.path.join(json_path, "images")
-    if not os.path.exists(json_anno_path):
-        os.makedirs(os.path.join(json_anno_path))
+    utils.mkdirs(json_anno_path)
     coco = COCO(coco_file_path)
     meta_json_dict = {
         "info": coco.dataset.get('info', []),
@@ -411,7 +350,7 @@ def merge_coco_to_json_dataset(coco_file_path,coco_image_path,json_path,prefix="
     ImgIDs = list(coco.imgs.keys())
     global pbar
     pbar = pyprind.ProgBar(len(ImgIDs),monitor=True,title="converting coco to json")
-    max_num = get_dir_path_max_num(json_anno_path, prefix)
+    max_num = utils.get_dir_path_max_num(json_anno_path, prefix,args)
     if os.path.exists(os.path.join(json_path, "list.json")):
         with open(os.path.join(json_path, "list.json"), "r") as f:
             new_image_id_list = json.load(f)["ImgIDs"]
@@ -438,22 +377,20 @@ def merge_coco_to_json_dataset(coco_file_path,coco_image_path,json_path,prefix="
             for one_anno in annotations:
                 one_anno["category_id"] = category_map.get(one_anno["category_id"],one_anno["category_id"])
         json_dict["annotations"] = annotations
-        with open(os.path.join(json_path, "images", "{}.json".format(new_image_id)), "w") as f:
-            f.write(json.dumps(json_dict, indent=4, separators=(',', ':')))
         img_path = os.path.join(coco_image_path, json_dict["images"][0]["file_name"])
         if args and not args.ignore_image:
-            if os.path.exists(img_path):
-                shutil.copyfile(img_path, os.path.join(json_path, "images", "{}.jpg".format(new_image_id)))
-            else:
-                print("'{}' file does not exist.".format(img_path))
+            shutil.copyfile(img_path, os.path.join(json_path, "images", "{}.jpg".format(new_image_id)))
+        with open(os.path.join(json_path, "images", "{}.json".format(new_image_id)), "w") as f:
+            f.write(json.dumps(json_dict, indent=4, separators=(',', ':')))
+
+
         pbar.update()
     with open(os.path.join(json_path, "list.json") , "w") as f:
         f.write(json.dumps({"ImgIDs":new_image_id_list},indent=4, separators=(',', ':')))
 
 def merge_json_to_coco_dataset(json_path,coco_file_path,coco_image_path,prefix="",args=None):
     max_num = 0
-    if not os.path.exists(coco_image_path):
-        os.makedirs(coco_image_path)
+    utils.mkdirs(coco_image_path)
     if os.path.exists(coco_file_path):
         coco = {"images": [], "annotations": []}
         max_num = get_exists_coco_max_num(coco_file_path,coco,prefix)
@@ -510,8 +447,7 @@ def copy_dir_by_percent(src_path,dir_path,percent=0,number=0):
 def copy_json_by_percent(src_path,dir_path,percent=0,number=0):
     src_image_path = os.path.join(src_path,"images")
     dir_image_path = os.path.join(dir_path,"images")
-    if not os.path.exists(dir_image_path):
-        os.makedirs(dir_image_path)
+    utils.mkdirs(dir_image_path)
     if not percent and not number:
         shutil.copytree(src_path, dir_path)
         shutil.copyfile(os.path.join(src_path, "list.json"), os.path.join(dir_path, "list.json"))
@@ -562,6 +498,7 @@ def copy_voc_by_percent(src_path,dir_path,percent=0,number=0):
         elif number:
             target = int(number)
         if target:
+            pbar = pyprind.ProgBar(len(src_list) if target > len(src_list) else target, monitor=True, title="copy coco")
             if not os.path.exists(dir_image_path):
                 os.makedirs(dir_image_path)
             if not os.path.exists(dir_anno_path):
@@ -577,14 +514,14 @@ def copy_voc_by_percent(src_path,dir_path,percent=0,number=0):
                     anno_name =image_id +".xml"
                     shutil.copyfile(os.path.join(src_anno_path,anno_name), os.path.join(dir_anno_path, anno_name))
                     shutil.copyfile(os.path.join(src_image_path,image_name), os.path.join(dir_image_path, image_name))
+            pbar.update()
 
-def copy_coco_by_percent(from_file_path,from_image_path,to_file_path,to_image_path,percent=0,number=0):
+def copy_coco_by_percent(from_file_path,from_image_path,to_file_path,to_image_path,percent=0,number=0,args=None):
     if not percent and not number:
         shutil.copytree(from_image_path, to_image_path)
         shutil.copyfile(from_file_path,to_file_path)
     else:
-        if not os.path.exists(to_image_path):
-            os.makedirs(to_image_path)
+        utils.mkdirs(to_image_path)
         coco = COCO(from_file_path)
         new_coco ={
             "info": coco.dataset.get('info', []),
@@ -603,13 +540,17 @@ def copy_coco_by_percent(from_file_path,from_image_path,to_file_path,to_image_pa
         elif number:
             target = int(number)
         if target:
+            pbar = pyprind.ProgBar(len(ImgIDs) if target>len(ImgIDs)else target, monitor=True, title="copy coco")
             for ImgID in ImgIDs:
-                new_coco["images"].extend(coco.loadImgs([ImgID]))
-                new_coco["annotations"].extend(coco.loadAnns(coco.getAnnIds(imgIds=[ImgID])))
-                shutil.copyfile(os.path.join(from_image_path,"{}.jpg".format(ImgID)), os.path.join(to_image_path,"{}.jpg".format(ImgID)))
+                new_images = coco.loadImgs([ImgID])
+                new_anno = coco.loadAnns(coco.getAnnIds(imgIds=[ImgID]))
+                new_coco["images"].extend(new_images)
+                new_coco["annotations"].extend(new_anno)
+                shutil.copyfile(os.path.join(from_image_path,new_images[0]["file_name"]), os.path.join(to_image_path,new_images[0]["file_name"]))
                 current +=1
                 if current>=target:
                     break
+                pbar.update()
             with open(to_file_path, "w") as f:
                 f.write(json.dumps(new_coco,indent=4, separators=(',', ':')))
 
@@ -944,8 +885,6 @@ def module_predict_segmentation_list_to_json(list_file_path,json_path,base_categ
                                                           }
         if "score" in one:
             anno_dict["score"] = one["score"]
-        if "iou" in one:
-            anno_dict["iou"] = one["iou"]
         json_dict[one["image_id"]]["annotations"].append(anno_dict)
         pbar.update()
     pbar = pyprind.ProgBar(len(json_dict), monitor=True, title="writing to file")
@@ -965,8 +904,115 @@ def generate_image_id_list_for_new_datasets(image_path,out_path):
     with open(os.path.join(out_path, "list.json"), "w") as f:
         f.write(json.dumps({"ImgIDs": new_image_id_list}, indent=4, separators=(',', ':')))
 
-def calculate_dataset_iou():
+def calculate_dataset_per_category_iou():
     pass
+
+def merge_ocr_to_json(ocr_anno_path,ocr_image_path,json_path,prefix="",args=None):
+    args.anno_before_prefix = "gt_img_" if not args.anno_before_prefix else args.anno_before_prefix
+    args.anno_after_prefix = "img_" if not args.anno_after_prefix else args.anno_after_prefix
+    args.image_before_prefix = "img_" if not args.image_before_prefix else args.image_before_prefix
+    args.image_after_prefix = "img_" if not args.image_after_prefix else args.image_after_prefix
+    args.anno_before_suffix = "txt" if not args.anno_before_suffix else args.anno_before_suffix
+    json_anno_path = os.path.join(json_path, "images")
+    utils.mkdirs(json_anno_path)
+    utils.check_anno_image_number(ocr_anno_path,ocr_image_path,args)
+    image_id_list = []
+    name_dict = utils.gen_image_name_list(ocr_anno_path, ocr_image_path, json_anno_path,prefix,args)
+    pbar = pyprind.ProgBar(len(name_dict), monitor=True, title="writing to file")
+    for new_image_id,old_image_id in name_dict.items():
+        image_id_list.append(args.anno_after_prefix + str(new_image_id))
+        json_dict = {"images": [{"file_name": args.image_after_prefix + str(new_image_id) + '.jpg', "height": -1, "width": -1, "id": args.anno_after_prefix + str(new_image_id),
+                                 "license": 2, "coco_url": None, "data_captured": None, "flickr_url": None}],
+                     "annotations": []
+                     }
+        boxes,text_tags = utils.get_ocr_annotation(os.path.join(ocr_anno_path, "{}{}.{}".format(args.anno_before_prefix, str(old_image_id), args.anno_before_suffix)))
+        index = 0
+        for box,text_tag in zip(boxes,text_tags):
+            index += 1
+            json_dict["annotations"].append(
+                {"segmentation": box, "area": utils.calculate_quadrangle_area(box), "iscrowd": 0, "image_id": args.image_after_prefix + str(new_image_id),
+                 "bbox": [], "category_id": 100, "id": index,"text":text_tag}
+            )
+        dir_file = os.path.join(json_path, "images",args.anno_after_prefix + str(new_image_id) + ".json")
+        if args and not args.ignore_image:
+            shutil.copyfile(os.path.join(ocr_image_path, args.image_before_prefix + str(old_image_id) + ".jpg"),os.path.join(json_anno_path,args.image_after_prefix +  str(new_image_id) + ".jpg"))
+        with open(dir_file, "w+") as f:
+            f.write(json.dumps(json_dict, indent=4, separators=(',', ':')))
+        pbar.update()
+    if os.path.exists(os.path.join(json_path, "list.json")):
+        with open(os.path.join(json_path, "list.json"), "r") as f:
+            ImgIDs = json.load(f)["ImgIDs"]
+    else:
+        ImgIDs = []
+    ImgIDs.extend(image_id_list)
+    with open(os.path.join(json_path, "list.json"), "w") as f:
+        f.write(json.dumps({"ImgIDs": ImgIDs}, indent=4, separators=(',', ':')))
+
+def merge_json_to_ocr(json_path,ocr_out_path,prefix="",args=None):
+    args.anno_before_prefix = "img_" if not args.anno_before_prefix else args.anno_before_prefix
+    args.anno_after_prefix = "img_" if not args.anno_after_prefix else args.anno_after_prefix
+    args.image_before_prefix = "img_" if not args.image_before_prefix else args.image_before_prefix
+    args.image_after_prefix = "img_" if not args.image_after_prefix else args.image_after_prefix
+    args.anno_before_suffix = "json" if not args.anno_before_suffix else args.anno_before_suffix
+    ocr_anno_out_path = os.path.join(ocr_out_path,"gt")
+    ocr_image_out_path = os.path.join(ocr_out_path,"img")
+    utils.mkdirs(ocr_anno_out_path)
+    utils.mkdirs(ocr_image_out_path)
+    json_anno_path = os.path.join(json_path, "images")
+    image_id_list = utils.gen_image_name_list(json_anno_path, json_anno_path, ocr_anno_out_path, prefix, args)
+    pbar = pyprind.ProgBar(len(image_id_list), monitor=True, title="writing to file")
+    for new_image_id,old_image_id in image_id_list.items():
+        file_path = os.path.join(json_anno_path,"{}{}.json".format(args.anno_before_prefix,old_image_id))
+        with open(file_path, "r") as f:
+            coco_dict = json.load(f)
+        bboxs = []
+        for one in coco_dict["annotations"]:
+            one["segmentation"].append(one["text"])
+            bboxs.append(one["segmentation"])
+        dir_file = os.path.join(ocr_anno_out_path,"{}{}.txt".format(args.anno_after_prefix,new_image_id))
+        if args and not args.ignore_image:
+            shutil.copyfile(os.path.join(json_anno_path,args.image_before_prefix + str(old_image_id) + ".jpg"),os.path.join(ocr_image_out_path,args.image_after_prefix + str(new_image_id) + ".jpg"))
+        with open(dir_file, "w+",encoding="utf-8") as f:
+            f.write(utils.convert_ocr_annotation_list_to_str(bboxs))
+        pbar.update()
+
+def find_coco_dataset_category_ids(coco_anno_file_path):
+    category_ids = set()
+    coco = COCO(coco_anno_file_path)
+    categories = coco.dataset.get('categories')
+    ImgIDs = list(coco.imgs.keys())
+    pbar = pyprind.ProgBar(len(ImgIDs), monitor=True, title="counting coco")
+    for ImgID in ImgIDs:
+        anno = coco.loadAnns(coco.getAnnIds(imgIds=[ImgID]))
+        for one_anno in anno:
+            category_ids.add(one_anno["category_id"])
+        pbar.update()
+    print(category_ids)
+
+def find_voc_dataset_category_ids(voc_anno_path):
+    src_list = glob.glob(os.path.join(voc_anno_path,"*.xml"))
+    category_ids = {}
+    pbar = pyprind.ProgBar(len(src_list), monitor=True, title="counting voc")
+    for file in src_list:
+        tree = ET.parse(file)
+        root = tree.getroot()
+        for one in get(root, "object"):
+            name = get_value(one, "name")
+            category_ids[name] = get_class_number(name)
+        pbar.update()
+    print(category_ids)
+
+def find_json_dataset_category_ids(json_anno_path):
+    src_list = glob.glob(os.path.join(json_anno_path, "*.json"))
+    category_ids = set()
+    pbar = pyprind.ProgBar(len(src_list), monitor=True, title="counting json")
+    for file in src_list:
+        with open(file, "r") as f:
+            json_dict = json.load(f)
+        for one in json_dict["annotations"]:
+            category_ids.add(one["category_id"])
+        pbar.update()
+    print(category_ids)
 
 def run_command(args, command, nargs, parser):
     if command == "json-to-voc":
@@ -1022,7 +1068,7 @@ def run_command(args, command, nargs, parser):
             parser.print_help()
             print("\n [--percent 0.1] [--number 100] copy-coco [from_file_path] [from_image_path] [to_file_path] [to_image_path]")
         else:
-            copy_coco_by_percent(nargs[0], nargs[1], nargs[2], nargs[3],percent=args.percent,number=args.number)
+            copy_coco_by_percent(nargs[0], nargs[1], nargs[2], nargs[3],percent=args.percent,number=args.number,args=args)
     elif command == "merge-voc-to-json":
         if len(nargs) != 2:
             parser.print_help()
@@ -1113,6 +1159,36 @@ def run_command(args, command, nargs, parser):
             print("\n generate_image_id_list_for_new_datasets [image_path] [json_out_path]\n")
         else:
             generate_image_id_list_for_new_datasets(nargs[0],nargs[1])
+    elif command == "merge-ocr-to-json":
+        if len(nargs)!=3:
+            parser.print_help()
+            print("\n merge-ocr-to-json [ocr_anno_path] [ocr_image_path] [json_path]\n")
+        else:
+            merge_ocr_to_json(nargs[0],nargs[1],nargs[2],args.prefix,args)
+    elif command == "merge-json-to-ocr":
+        if len(nargs)!=2:
+            parser.print_help()
+            print("\n merge-json-to-ocr [json_path] [ocr_out_path] \n")
+        else:
+            merge_json_to_ocr(nargs[0],nargs[1],args.prefix,args)
+    elif command == "find_coco_dataset_category_ids":
+        if len(nargs)!=1:
+            parser.print_help()
+            print("\n find_coco_dataset_category_ids [coco_anno_path] \n")
+        else:
+            find_coco_dataset_category_ids(nargs[0])
+    elif command == "find_voc_dataset_category_ids":
+        if len(nargs)!=1:
+            parser.print_help()
+            print("\n find_voc_dataset_category_ids [voc_anno_path] \n")
+        else:
+            find_voc_dataset_category_ids(nargs[0])
+    elif command == "find_json_dataset_category_ids":
+        if len(nargs)!=1:
+            parser.print_help()
+            print("\n find_json_dataset_category_ids [json_anno_path] \n")
+        else:
+            find_json_dataset_category_ids(nargs[0])
     else:
         parser.print_help()
 
@@ -1154,41 +1230,22 @@ if __name__ == '__main__':
         merge-json-to-coco 
             [json_path] [coco_file_path] [coco_image_path]:merge json to coco format
       '''))
-    parser.add_argument("--prefix", "-p",
-                        default="",
-                        help="generate file'prefix",
-                        action="store"
-                        )
-    parser.add_argument("--ignore-image",
-                        default=False,
-                        help="dont copy image",
-                        action="store_true"
-                        )
-    parser.add_argument("--percent",
-                        default=0,
-                        help="copy file percent",
-                        action="store"
-                        )
-    parser.add_argument("--number","-n",
-                        default=0,
-                        help="copy file numbers",
-                        action="store",type=int
-                        )
-    parser.add_argument("--base_category_num", "-cn",
-                        default=0,
-                        help="base_category_num",
-                        action="store",type=int
-                        )
-    parser.add_argument("command",
-                        help="See above for the list of valid command")
-    parser.add_argument('nargs', nargs=argparse.REMAINDER,
-                        help="Additional command argument",
-                        )
-    parser.add_argument("--use-category-mapping",
-                        default=False,
-                        help="use category mapping",
-                        action="store_true"
-                        )
+    parser.add_argument("--prefix", "-p",default="",help="generate file'prefix",action="store")
+    parser.add_argument("--anno-before-prefix","-abp", default="",help="before anno prefix",action="store")
+    parser.add_argument("--anno-after-prefix", "-aap",default="",help="after anno prefix",action="store")
+    parser.add_argument("--anno-before-suffix","-abs", default="",help="before anno suffix",action="store")
+    parser.add_argument("--anno-after-suffix", "-aas",default="",help="after anno suffix",action="store")
+    parser.add_argument("--image-before-prefix","-ibp", default="",help="before image prefix",action="store")
+    parser.add_argument("--image-after-prefix","-iap", default="",help="after image prefix",action="store")
+    parser.add_argument("--image-before-suffix","-ibs", default="jpg",help="before image suffix",action="store")
+    parser.add_argument("--image-after-suffix", "-ias",default="jpg",help="after image suffix",action="store")
+    parser.add_argument("--ignore-image",default=False,help="dont copy image",action="store_true")
+    parser.add_argument("--percent",default=0,help="copy file percent",action="store")
+    parser.add_argument("--number","-n",default=0,help="copy file numbers",action="store",type=int)
+    parser.add_argument("--base_category_num", "-cn",default=0,help="base_category_num",action="store",type=int)
+    parser.add_argument("command",help="See above for the list of valid command")
+    parser.add_argument('nargs', nargs=argparse.REMAINDER,help="Additional command argument")
+    parser.add_argument("--use-category-mapping",default=False,help="use category mapping",action="store_true")
     args = parser.parse_args()
     command = args.command
     nargs = args.nargs
