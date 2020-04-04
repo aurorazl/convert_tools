@@ -54,7 +54,7 @@ def upload_model_predict_result(anno_path,project_id,dataset_id,verbose = False)
     if verbose:
         print(cmd)
     os.system(cmd)
-    utils.scp(config["identity_file"], config["json_tar_name"], config["nfs_base_path"], config["user"], config["host"])
+    utils.scp(config["identity_file"], config["json_tar_name"], config["nfs_base_path"], config["user"], config["host"],verbose=verbose)
     target_json_base_path = os.path.join(config["nfs_base_path"], "label/private/predict", dataset_id, project_id)
     cmd = ""
     cmd += "rm -rf " + os.path.join(target_json_base_path, "images") + ";"
