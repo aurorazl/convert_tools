@@ -1,5 +1,5 @@
 # 上传数据集文档
-> 详细转换和上传流程请见[upload_detail_steps.md](upload_detail_steps.md)
+> 详细转换和上传流程请见[upload_detail_steps.md](https://github.com/apulis/dev_document/blob/master/label/upload_detail_steps.md)
 
 ### 配置config.yaml文件
 ```shell script
