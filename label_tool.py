@@ -795,7 +795,7 @@ def compress_rle_to_polygon(rle_dict,simply=True):
         else:
             contour = np.flip(contour, axis=1)
             segmentation.append(contour.ravel().tolist())
-    return segmentation[0] if segmentation else segmentation
+    return segmentation
 
 def close_contour(contour):
     if not np.array_equal(contour[0], contour[-1]):
