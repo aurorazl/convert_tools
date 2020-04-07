@@ -926,7 +926,7 @@ def merge_ocr_to_json(ocr_anno_path,ocr_image_path,json_path,prefix="",args=None
         for box,text_tag in zip(boxes,text_tags):
             index += 1
             json_dict["annotations"].append(
-                {"segmentation": box, "area": utils.calculate_quadrangle_area(box), "iscrowd": 0, "image_id": args.image_after_prefix + str(new_image_id),
+                {"segmentation":[box], "area": utils.calculate_quadrangle_area(box), "iscrowd": 0, "image_id": args.image_after_prefix + str(new_image_id),
                  "bbox": [], "category_id": 100, "id": index,"text":text_tag}
             )
         dir_file = os.path.join(json_path, "images",args.anno_after_prefix + str(new_image_id) + ".json")
