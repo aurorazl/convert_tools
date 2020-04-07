@@ -82,10 +82,6 @@ def get_class_name(number,categories=None):
             name = one.get("name").replace(" ","_")
     return name
 
-def get_image_prefix(filename):
-    query = os.path.splitext(filename)[0]
-    return query
-
 def get_node_or_create(elem,key,new):
     re = get(elem, key)
     if not re or new:
