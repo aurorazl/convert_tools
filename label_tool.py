@@ -900,7 +900,7 @@ def generate_image_id_list_for_new_datasets(image_path,out_path):
     with open(os.path.join(out_path, "list.json"), "w") as f:
         f.write(json.dumps({"ImgIDs": new_image_id_list}, indent=4, separators=(',', ':')))
 
-def calculate_dataset_per_category_iou():
+def calculate_dataset_map():
     pass
 
 def merge_ocr_to_json(ocr_anno_path,ocr_image_path,json_path,prefix="",args=None):

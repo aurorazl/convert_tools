@@ -157,7 +157,7 @@ def get_ocr_annotation(label_path: str) -> tuple:
                 text_tags.append(label)
                 # if label == '*' or label == '###':
                 x1, y1, x2, y2, x3, y3, x4, y4 = list(map(float, params[:8]))
-                boxes.append([[x1, y1], [x2, y2], [x3, y3], [x4, y4]])
+                boxes.append([x1, y1, x2, y2, x3, y3, x4, y4])
             except:
                 print('load label failed on {}'.format(label_path))
     return boxes,text_tags

@@ -217,10 +217,14 @@ def auto_upload_dataset(anno_path, image_path, project_id, dataset_id, user_id, 
         file_type = os.path.splitext(first_file)[1]
         if file_type == ".xml":
             print("uploading voc dataset")
+            if anno_path.endswith("/"):
+                anno_path = os.path.dirname(anno_path)
+            if image_path.endswith("/"):
+                image_path = os.path.dirname(image_path)
             path = os.path.dirname(anno_path)
             path2 = os.path.dirname(image_path)
             if (path != path2):
-                raise Exception("wrong path")
+                raise Exception("wrong path.anno path {} not equal with image path {}".format(path,path2))
             upload_dataset_from_voc(path, project_id, dataset_id, user_id, verbose, ignore_image, args)
         elif file_type == ".txt":
             print("uploading ocr dataset")
