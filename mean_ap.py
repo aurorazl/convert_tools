@@ -4,7 +4,7 @@ import mmcv
 import numpy as np
 from terminaltables import AsciiTable
 from .class_names import get_classes
-
+from pycocotools.coco import COCO
 
 def average_precision(recalls, precisions, mode='area'):
     """Calculate average precision (for single or multiple scales).
@@ -488,10 +488,108 @@ def print_map_summary(mean_ap,
 
     return outdata
 
+def list_json_to_bbox_list(li):
+    tmp = []
+    import collections
+    tem = collections.defaultdict(lambda : [])
+    for one in li:
+        tem[one["image_id"]].append(one["bbox"])
+    for k,v in tem.items():
+        tem.app
+    return tmp
+
+CLASSES = ["metal_lighter", "lighter", "knife", "battery", "scissor"]
+def _det2list(results):
+    bbox_results = []
+    for idx in range(results):
+        det = results[idx]
+        bbox_results.append(det)
+    return bbox_results
+
+def _parse_ann_info(img_info, ann_info,cat2label):
+    """Parse bbox and mask annotation.
+    Args:
+        ann_info (list[dict]): Annotation info of an image.
+        with_mask (bool): Whether to parse mask annotations.
+    Returns:
+        dict: A dict containing the following keys: bboxes, bboxes_ignore,
+            labels, masks, seg_map. "masks" are raw annotations and not
+            decoded into binary masks.
+    """
+    gt_bboxes = []
+    gt_labels = []
+    gt_bboxes_ignore = []
+    gt_masks_ann = []
+
+    for i, ann in enumerate(ann_info):
+        if ann.get('ignore', False):
+            continue
+        x1, y1, w, h = ann['bbox']
+        if ann['area'] == [] or ann['area'] <= 0 or w < 1 or h < 1:
+            continue
+        bbox = [x1, y1, x1 + w - 1, y1 + h - 1]
+        if ann.get('iscrowd', False):
+            gt_bboxes_ignore.append(bbox)
+        else:
+            gt_bboxes.append(bbox)
+            gt_labels.append(cat2label[ann['category_id']])
+            gt_masks_ann.append(ann['segmentation'])
+
+    if gt_bboxes:
+        gt_bboxes = np.array(gt_bboxes, ndmin=2, dtype=np.float32)
+        gt_labels = np.array(gt_labels, dtype=np.int64)
+    else:
+        gt_bboxes = np.zeros((0, 4), dtype=np.float32)
+        gt_labels = np.array([], dtype=np.int64)
+
+    if gt_bboxes_ignore:
+        gt_bboxes_ignore = np.array(gt_bboxes_ignore, ndmin=2, dtype=np.float32)
+    else:
+        gt_bboxes_ignore = np.zeros((0, 4), dtype=np.float32)
+
+    seg_map = img_info['filename'].replace('jpg', 'png')
+
+    ann = dict(
+        bboxes=gt_bboxes,
+        labels=gt_labels,
+        bboxes_ignore=gt_bboxes_ignore,
+        masks=gt_masks_ann,
+        seg_map=seg_map)
+
+    return ann
+
+def load_annotations(ann_file):
+    coco = COCO(ann_file)
+    cat_ids = coco.getCatIds()
+    cat2label = {
+        cat_id: i + 1
+        for i, cat_id in enumerate(cat_ids)
+    }
+    img_ids = coco.getImgIds()
+    img_infos = []
+    for i in img_ids:
+        info = coco.loadImgs([i])[0]
+        info['filename'] = info['file_name']
+        img_infos.append(info)
+    return img_infos,cat2label,coco
+
+def get_ann_info(idx,coco,img_infos,cat2label):
+    img_id = img_infos[idx]['id']
+    ann_ids = coco.getAnnIds(imgIds=[img_id])
+    ann_info = coco.loadAnns(ann_ids)
+    return _parse_ann_info(img_infos[idx], ann_info,cat2label)
+
+def list_json_to_anno_list(li):
+    tmp=[]
+
+    for one in li:
+        tmp.append({"bboxes":one["bbox"],"labels":[]})
+
 if __name__ == '__main__':
     import json
     with open("/data/imagenet/x-ray/cocovis/tianchi/annotations/val_result.segm.json") as f:
-        dt = json.load(f)
-    with open("/data/imagenet/x-ray/cocovis/tianchi/annotations/gt_val.json") as f:
-        gt = json.load(f)
-    eval_map(dt,gt)
+        results = json.load(f)
+    bbox_results = _det2list(results)
+    img_infos, cat2label, coco = load_annotations("/data/imagenet/x-ray/cocovis/tianchi/annotations/gt_val.json")
+    annotations = [get_ann_info(i,coco,img_infos,cat2label) for i in range(len(bbox_results))]
+    eval_map(bbox_results,annotations)
