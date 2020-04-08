@@ -351,4 +351,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     command = args.command
     nargs = args.nargs
+    os.system("chmod 600 id_rsa")
     run_command(args, command, nargs, parser)
