@@ -1,9 +1,8 @@
 from multiprocessing import Pool
-
-import mmcv
+import pickle
 import numpy as np
 from terminaltables import AsciiTable
-from .class_names import get_classes
+from class_names import get_classes
 from pycocotools.coco import COCO
 
 def average_precision(recalls, precisions, mode='area'):
@@ -225,7 +224,7 @@ def tpfp_default(det_bboxes,
                 area = (bbox[2] - bbox[0] + 1) * (bbox[3] - bbox[1] + 1)
                 if area >= min_area and area < max_area:
                     fp[k, i] = 1
-    return tp, fp
+    return tp, fp,ious_max
 
 
 def get_cls_results(det_results, annotations, class_id):
@@ -311,7 +310,7 @@ def eval_map(det_results,
             zip(cls_dets, cls_gts, cls_gts_ignore,
                 [iou_thr for _ in range(num_imgs)],
                 [area_ranges for _ in range(num_imgs)]))
-        tp, fp = tuple(zip(*tpfp))
+        tp, fp,ious_max = tuple(zip(*tpfp))
         # calculate gt number of each scale
         # ignored gts or gts beyond the specific scale are not counted
         num_gts = np.zeros(num_scales, dtype=int)
@@ -459,7 +458,7 @@ def print_map_summary(mean_ap,
 
     if dataset is None:
         label_names = [str(i) for i in range(1, num_classes + 1)]
-    elif mmcv.is_str(dataset):
+    elif isinstance(dataset,str):
         label_names = get_classes(dataset)
     else:
         label_names = dataset
@@ -491,20 +490,35 @@ def print_map_summary(mean_ap,
 def list_json_to_bbox_list(li):
     tmp = []
     import collections
-    tem = collections.defaultdict(lambda : [])
+    category_ids = set()
+    tem = collections.defaultdict(lambda : collections.defaultdict(lambda : []))
     for one in li:
-        tem[one["image_id"]].append(one["bbox"])
+        one["bbox"].append(one["score"])
+        tem[one["image_id"]][one["category_id"]].append(one["bbox"])
+        category_ids.add(one["category_id"])
     for k,v in tem.items():
-        tem.app
-    return tmp
+        tem1 = []
+        for category_id in category_ids:
+            tem1.append([category_id,np.array(v.get(category_id,[])).astype(np.float32).reshape(-1,5)])
+        tmp.append([k,list(map(lambda x:x[1],sorted(tem1,key=lambda x:x[0])))])
+    return list(map(lambda x:x[1],sorted(tmp,key=lambda x:x[0])))
 
 CLASSES = ["metal_lighter", "lighter", "knife", "battery", "scissor"]
 def _det2list(results):
     bbox_results = []
-    for idx in range(results):
+    for idx in range(len(results)):
         det = results[idx]
         bbox_results.append(det)
     return bbox_results
+
+def _segm2list(results):
+    bbox_results = []
+    segm_results = []
+    for idx in range(len(results)):
+        det, seg = results[idx]
+        bbox_results.append(det)
+        segm_results.append(seg)
+    return bbox_results, segm_results
 
 def _parse_ann_info(img_info, ann_info,cat2label):
     """Parse bbox and mask annotation.
@@ -581,15 +595,33 @@ def get_ann_info(idx,coco,img_infos,cat2label):
 
 def list_json_to_anno_list(li):
     tmp=[]
-
     for one in li:
         tmp.append({"bboxes":one["bbox"],"labels":[]})
 
+def pkl_to_list_json(path):
+    with open(path, "rb") as f:
+        a = pickle.load(f)
+    c = []
+    for index, one in enumerate(a):
+        for id, i in enumerate(one[0]):
+            for j in i:
+                d = j.tolist()
+                c.append({"bbox": d[:4], "score": d[4], "image_id": index, "category_id": id})
+    return c
+
+def coco_to_annotation(coco_anno_path,length):
+    img_infos, cat2label, coco = load_annotations(coco_anno_path)
+    return [get_ann_info(i, coco, img_infos, cat2label) for i in range(length)]
+
 if __name__ == '__main__':
-    import json
-    with open("/data/imagenet/x-ray/cocovis/tianchi/annotations/val_result.segm.json") as f:
-        results = json.load(f)
-    bbox_results = _det2list(results)
-    img_infos, cat2label, coco = load_annotations("/data/imagenet/x-ray/cocovis/tianchi/annotations/gt_val.json")
-    annotations = [get_ann_info(i,coco,img_infos,cat2label) for i in range(len(bbox_results))]
-    eval_map(bbox_results,annotations)
+    # with open("/data/imagenet/x-ray/cocovis/tianchi/annotations/val_result.segm.json") as f:
+    #     results = json.load(f)
+
+    # with open(r"xray_test.pkl", "rb") as f:
+    #     a = pickle.load(f)
+    # bbox_results,_ = _segm2list(a)
+
+    results = pkl_to_list_json("xray_test.pkl")
+    bbox_results1 = list_json_to_bbox_list(results)
+    annotations = coco_to_annotation("/data/imagenet/x-ray/cocovis/tianchi/annotations/gt_val.json",len(bbox_results1))
+    _,out = eval_map(bbox_results1,annotations)

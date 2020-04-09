@@ -26,7 +26,7 @@ import cv2
 import utils
 import glob
 import requests
-
+import mean_ap
 filename_pattern = re.compile(r"(\S+)\.(xml|json|jpg|txt)")
 image_pattern = re.compile(r"(\S+)\.(jpg)")
 gen_pattern = re.compile(r"(\S*?)(\d+)\.(xml|json|txt)")
@@ -873,12 +873,24 @@ def module_predict_segmentation_list_to_json(list_file_path,json_path,base_categ
     global pbar
     pbar = pyprind.ProgBar(len(segmentation_list), monitor=True, title="module_predict_segmentation_list_to_json")
     for one in segmentation_list:
-        json_dict[one["image_id"]]["images"] = [{"file_name":str(one["image_id"])+".jpg","id":one["image_id"],"height":one["segmentation"]["size"][1],"width":one["segmentation"]["size"][0]}]
-        anno_dict = {"segmentation":compress_rle_to_polygon(one["segmentation"]),"area":int(mask.area(one["segmentation"])),"iscrowd":0,
-                                                          "image_id":one["image_id"],"bbox":one["bbox"],
-                                                          "category_id":category_map.get(int(one["category_id"])+base_category_num,int(one["category_id"])+base_category_num),
-                                                          "id":one["image_id"]
-                                                          }
+        if "segmentation" in one:
+            json_dict[one["image_id"]]["images"] = [{"file_name":str(one["image_id"])+".jpg","id":one["image_id"],"height":one["segmentation"]["size"][1],"width":one["segmentation"]["size"][0]}]
+            anno_dict = {"segmentation":compress_rle_to_polygon(one["segmentation"]),"area":int(mask.area(one["segmentation"])),"iscrowd":0,
+                                                              "image_id":one["image_id"],"bbox":one["bbox"],
+                                                              "category_id":category_map.get(int(one["category_id"])+base_category_num,int(one["category_id"])+base_category_num),
+                                                              "id":one["image_id"]
+                                                              }
+        else:
+            json_dict[one["image_id"]]["images"] = [{"file_name": str(one["image_id"]) + ".jpg", "id": one["image_id"],
+                                                     "height": -1,
+                                                     "width": -1}]
+            anno_dict = {"segmentation": [],
+                         "area": -1, "iscrowd": 0,
+                         "image_id": one["image_id"], "bbox": one["bbox"],
+                         "category_id": category_map.get(int(one["category_id"]) + base_category_num,
+                                                         int(one["category_id"]) + base_category_num),
+                         "id": one["image_id"]
+                         }
         if "score" in one:
             anno_dict["score"] = one["score"]
         json_dict[one["image_id"]]["annotations"].append(anno_dict)
@@ -900,8 +912,14 @@ def generate_image_id_list_for_new_datasets(image_path,out_path):
     with open(os.path.join(out_path, "list.json"), "w") as f:
         f.write(json.dumps({"ImgIDs": new_image_id_list}, indent=4, separators=(',', ':')))
 
-def calculate_dataset_map():
-    pass
+def calculate_dataset_map_by_pkl(pkl_file_path,coco_anno_path,out_path):
+    results = mean_ap.pkl_to_list_json(pkl_file_path,)
+    bbox_results1 = mean_ap.list_json_to_bbox_list(results)
+    annotations = mean_ap.coco_to_annotation(coco_anno_path, len(bbox_results1))
+    _, out = mean_ap.eval_map(bbox_results1, annotations)
+    with open(os.path.join(out_path,"map.json"),"w") as f:
+        f.write(json.dumps(out, indent=4, separators=(',', ':')))
+
 
 def merge_ocr_to_json(ocr_anno_path,ocr_image_path,json_path,prefix="",args=None):
     args.anno_before_prefix = "gt_img_" if not args.anno_before_prefix else args.anno_before_prefix
