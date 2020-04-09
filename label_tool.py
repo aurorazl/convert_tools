@@ -50,26 +50,30 @@ def get_value(root, name):
         return re
 
 coco = None
+class_dict = {}
+max_index=0
 def get_class_number(name):
-    number = 0
     if name == "work_uniformm":
         name = "work_uniform"
     if name == "othe_hat":
         name = "other_hat"
-    try:
-        global coco
-        if not coco:
-            res = requests.get(url="https://apulis-sz-dev-worker01.sigsus.cn/api/labels")
-            coco = json.loads(res.content)["categories"]
-    except Exception:
-        with open(os.path.join("meta.json"), "r") as f:
-            coco = json.load(f)["categories"]
-    for one in coco:
-        if one.get("name")==name:
-            number = int(one.get("id",0))
-    # if number==0:
-    #     print(name)
-    return number
+    # try:
+    #     global coco
+    #     if not coco:
+    #         res = requests.get(url="https://apulis-sz-dev-worker01.sigsus.cn/api/labels")
+    #         coco = json.loads(res.content)["categories"]
+    # except Exception:
+    #     with open(os.path.join("meta.json"), "r") as f:
+    #         coco = json.load(f)["categories"]
+    # for one in coco:
+    #     if one.get("name")==name:
+    #         number = int(one.get("id",0))
+    global class_dict,max_index
+    if name not in class_dict:
+        class_dict[name] = max_index
+        max_index += 1
+        return max_index
+    return class_dict[name]
 
 def get_class_name(number,categories=None):
     name = None
@@ -378,8 +382,6 @@ def merge_coco_to_json_dataset(coco_file_path,coco_image_path,json_path,prefix="
             shutil.copyfile(img_path, os.path.join(json_path, "images", "{}.jpg".format(new_image_id)))
         with open(os.path.join(json_path, "images", "{}.json".format(new_image_id)), "w") as f:
             f.write(json.dumps(json_dict, indent=4, separators=(',', ':')))
-
-
         pbar.update()
     with open(os.path.join(json_path, "list.json") , "w") as f:
         f.write(json.dumps({"ImgIDs":new_image_id_list},indent=4, separators=(',', ':')))
@@ -990,43 +992,56 @@ def merge_json_to_ocr(json_path,ocr_out_path,prefix="",args=None):
             f.write(utils.convert_ocr_annotation_list_to_str(bboxs))
         pbar.update()
 
-def find_coco_dataset_category_ids(coco_anno_file_path):
+def find_coco_dataset_category_ids(coco_anno_file_path,out_path):
     category_ids = set()
     coco = COCO(coco_anno_file_path)
     categories = coco.dataset.get('categories')
     ImgIDs = list(coco.imgs.keys())
-    pbar = pyprind.ProgBar(len(ImgIDs), monitor=True, title="counting coco")
+    pbar = pyprind.ProgBar(len(ImgIDs), monitor=True, title="finding coco labels")
     for ImgID in ImgIDs:
         anno = coco.loadAnns(coco.getAnnIds(imgIds=[ImgID]))
         for one_anno in anno:
             category_ids.add(one_anno["category_id"])
         pbar.update()
-    print(category_ids)
+    with open(os.path.join(out_path,"category.json")) as f:
+        f.write(json.dumps(categories, indent=4, separators=(',', ':')))
 
-def find_voc_dataset_category_ids(voc_anno_path):
+def find_voc_dataset_category_ids(voc_anno_path,out_path):
     src_list = glob.glob(os.path.join(voc_anno_path,"*.xml"))
     category_ids = {}
-    pbar = pyprind.ProgBar(len(src_list), monitor=True, title="counting voc")
+    pbar = pyprind.ProgBar(len(src_list), monitor=True, title="finding voc")
     for file in src_list:
         tree = ET.parse(file)
         root = tree.getroot()
         for one in get(root, "object"):
             name = get_value(one, "name")
-            category_ids[name] = get_class_number(name)
+            category_id = {}
+            if name not in category_ids:
+                category_id["id"] = get_class_number(name)
+                category_id["name"] = name
+                category_id["supercategory"] = "unkown"
+                category_ids[name] = category_id
         pbar.update()
-    print(category_ids)
+    with open(os.path.join(out_path,"category.json")) as f:
+        f.write(json.dumps([v for k,v in category_ids.items()], indent=4, separators=(',', ':')))
 
-def find_json_dataset_category_ids(json_anno_path):
+def find_json_dataset_category_ids(json_anno_path,out_path):
     src_list = glob.glob(os.path.join(json_anno_path, "*.json"))
-    category_ids = set()
-    pbar = pyprind.ProgBar(len(src_list), monitor=True, title="counting json")
+    category_ids = {}
+    pbar = pyprind.ProgBar(len(src_list), monitor=True, title="finding json")
     for file in src_list:
         with open(file, "r") as f:
             json_dict = json.load(f)
         for one in json_dict["annotations"]:
-            category_ids.add(one["category_id"])
+            if one["category_id"] not in category_ids:
+                category_ids[one["category_id"]] = {"id":one["category_id"],"name":one["category_id"],"supercategory":one["category_id"]}
         pbar.update()
-    print(category_ids)
+    with open(os.path.join(out_path,"category.json")) as f:
+        f.write(json.dumps([v for k,v in category_ids.items()], indent=4, separators=(',', ':')))
+
+def find_ocr_dataset_category_ids(out_path):
+    with open(os.path.join(out_path,"category.json")) as f:
+        f.write(json.dumps([{"id":1,"name":"OCR","supercategory":"OCR"}], indent=4, separators=(',', ':')))
 
 def run_command(args, command, nargs, parser):
     if command == "json-to-voc":

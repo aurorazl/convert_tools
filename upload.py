@@ -35,6 +35,7 @@ def upload_dataset(image_path, anno_path, project_id, dataset_id, verbose=False,
     utils.scp(config["identity_file"], config["json_tar_name"], config["nfs_base_path"], config["user"], config["host"],
               verbose)
     utils.scp(config["identity_file"], "commit.json", config["nfs_base_path"], config["user"], config["host"], verbose)
+    utils.scp(config["identity_file"], "category.json", config["nfs_base_path"], config["user"], config["host"], verbose)
     target_image_base_path = os.path.join(config["nfs_base_path"], "label/public/tasks", dataset_id)
     target_json_base_path = os.path.join(config["nfs_base_path"], "label/private/tasks", dataset_id, project_id)
     cmd = ""
@@ -42,6 +43,7 @@ def upload_dataset(image_path, anno_path, project_id, dataset_id, verbose=False,
         cmd += "rm -rf " + os.path.join(target_image_base_path, "images") + ";"
     cmd += "rm -f " + os.path.join(target_image_base_path, "list.json") + ";"
     cmd += "rm -f " + os.path.join(target_image_base_path, "commit.json") + ";"
+    cmd += "rm -f " + os.path.join(target_image_base_path, "category.json") + ";"
     cmd += "rm -rf " + os.path.join(target_json_base_path, "images") + ";"
     if not ignore_image:
         cmd += "mkdir -p " + target_image_base_path + ";"
@@ -53,6 +55,7 @@ def upload_dataset(image_path, anno_path, project_id, dataset_id, verbose=False,
     cmd += "tar zxf %s -C %s" % (
     os.path.join(config["nfs_base_path"], config["json_tar_name"]), target_json_base_path) + ";"
     cmd += "mv %s %s" % (os.path.join(config["nfs_base_path"], "commit.json"), target_json_base_path) + ";"
+    cmd += "mv %s %s" % (os.path.join(config["nfs_base_path"], "category.json"), target_json_base_path) + ";"
     utils.SSH_exec_cmd_with_output(config["identity_file"], config["user"], config["host"], cmd, verbose=verbose)
 
 
@@ -82,6 +85,7 @@ def upload_dataset_from_coco(coco_anno_path, image_path, project_id, dataset_id,
     os.system("mkdir %s" % out_json_path)
     label_tool.merge_coco_to_json_dataset(coco_anno_path, image_path, out_json_path, args=args)
     label_tool.generate_commit_json(out_json_path, user_id, args.base_category_num)
+    label_tool.find_coco_dataset_category_ids(coco_anno_path,out_json_path)
     with cd(out_json_path):
         upload_dataset("images", "images", project_id, dataset_id, verbose, ignore_image)
 
@@ -96,6 +100,7 @@ def upload_dataset_from_voc(voc_path, project_id, dataset_id, user_id, verbose=F
     os.system("mkdir %s" % out_json_path)
     label_tool.merge_voc_dataset_to_json_dataset(voc_anno_path, voc_image_path, out_json_path, args=args)
     label_tool.generate_commit_json(out_json_path, user_id, args.base_category_num)
+    label_tool.find_coco_dataset_category_ids(voc_anno_path, out_json_path)
     with cd(out_json_path):
         upload_dataset("images", "images", project_id, dataset_id, verbose, ignore_image)
 
@@ -109,6 +114,7 @@ def upload_dataset_from_ocr(ocr_anno_path, ocr_image_path, project_id, dataset_i
     os.system("mkdir %s" % out_json_path)
     label_tool.merge_ocr_to_json(ocr_anno_path, ocr_image_path, out_json_path, args=args)
     label_tool.generate_commit_json(out_json_path, user_id, args.base_category_num)
+    label_tool.find_ocr_dataset_category_ids(out_json_path)
     with cd(out_json_path):
         upload_dataset("images", "images", project_id, dataset_id, verbose, ignore_image)
 
