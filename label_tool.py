@@ -993,16 +993,19 @@ def merge_json_to_ocr(json_path,ocr_out_path,prefix="",args=None):
         pbar.update()
 
 def find_coco_dataset_category_ids(coco_anno_file_path,out_path):
-    category_ids = set()
+    category_ids = {}
     coco = COCO(coco_anno_file_path)
     categories = coco.dataset.get('categories')
     ImgIDs = list(coco.imgs.keys())
     pbar = pyprind.ProgBar(len(ImgIDs), monitor=True, title="finding coco labels")
     for ImgID in ImgIDs:
         anno = coco.loadAnns(coco.getAnnIds(imgIds=[ImgID]))
-        for one_anno in anno:
-            category_ids.add(one_anno["category_id"])
+        for one in anno:
+            if one["category_id"] not in category_ids:
+                category_ids[one["category_id"]] = {"id":one["category_id"],"name":one["category_id"],"supercategory":one["category_id"],"type":"polygon" if one["segmentation"] else "bbox"}
         pbar.update()
+    for i in categories:
+        i["type"] = "polygon"
     with open(os.path.join(out_path,"category.json")) as f:
         f.write(json.dumps(categories, indent=4, separators=(',', ':')))
 
@@ -1020,6 +1023,7 @@ def find_voc_dataset_category_ids(voc_anno_path,out_path):
                 category_id["id"] = get_class_number(name)
                 category_id["name"] = name
                 category_id["supercategory"] = "unkown"
+                category_id["type"] = "bbox"
                 category_ids[name] = category_id
         pbar.update()
     with open(os.path.join(out_path,"category.json")) as f:
@@ -1034,14 +1038,14 @@ def find_json_dataset_category_ids(json_anno_path,out_path):
             json_dict = json.load(f)
         for one in json_dict["annotations"]:
             if one["category_id"] not in category_ids:
-                category_ids[one["category_id"]] = {"id":one["category_id"],"name":one["category_id"],"supercategory":one["category_id"]}
+                category_ids[one["category_id"]] = {"id":one["category_id"],"name":one["category_id"],"supercategory":one["category_id"],"type":"polygon" if one["segmentation"] else "bbox"}
         pbar.update()
     with open(os.path.join(out_path,"category.json")) as f:
         f.write(json.dumps([v for k,v in category_ids.items()], indent=4, separators=(',', ':')))
 
 def find_ocr_dataset_category_ids(out_path):
     with open(os.path.join(out_path,"category.json")) as f:
-        f.write(json.dumps([{"id":1,"name":"OCR","supercategory":"OCR"}], indent=4, separators=(',', ':')))
+        f.write(json.dumps([{"id":1,"name":"OCR","supercategory":"OCR","type":"bbox"}], indent=4, separators=(',', ':')))
 
 def run_command(args, command, nargs, parser):
     if command == "json-to-voc":
