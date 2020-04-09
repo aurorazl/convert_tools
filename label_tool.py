@@ -1006,7 +1006,7 @@ def find_coco_dataset_category_ids(coco_anno_file_path,out_path):
         pbar.update()
     for i in categories:
         i["type"] = "polygon"
-    with open(os.path.join(out_path,"category.json")) as f:
+    with open(os.path.join(out_path,"category.json"),"w+") as f:
         f.write(json.dumps(categories, indent=4, separators=(',', ':')))
 
 def find_voc_dataset_category_ids(voc_anno_path,out_path):
@@ -1026,7 +1026,7 @@ def find_voc_dataset_category_ids(voc_anno_path,out_path):
                 category_id["type"] = "bbox"
                 category_ids[name] = category_id
         pbar.update()
-    with open(os.path.join(out_path,"category.json")) as f:
+    with open(os.path.join(out_path,"category.json"),"w+") as f:
         f.write(json.dumps([v for k,v in category_ids.items()], indent=4, separators=(',', ':')))
 
 def find_json_dataset_category_ids(json_anno_path,out_path):
@@ -1040,11 +1040,11 @@ def find_json_dataset_category_ids(json_anno_path,out_path):
             if one["category_id"] not in category_ids:
                 category_ids[one["category_id"]] = {"id":one["category_id"],"name":one["category_id"],"supercategory":one["category_id"],"type":"polygon" if one["segmentation"] else "bbox"}
         pbar.update()
-    with open(os.path.join(out_path,"category.json")) as f:
+    with open(os.path.join(out_path,"category.json"),"w+") as f:
         f.write(json.dumps([v for k,v in category_ids.items()], indent=4, separators=(',', ':')))
 
 def find_ocr_dataset_category_ids(out_path):
-    with open(os.path.join(out_path,"category.json")) as f:
+    with open(os.path.join(out_path,"category.json"),"w+") as f:
         f.write(json.dumps([{"id":1,"name":"OCR","supercategory":"OCR","type":"bbox"}], indent=4, separators=(',', ':')))
 
 def run_command(args, command, nargs, parser):
