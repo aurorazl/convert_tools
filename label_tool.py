@@ -922,6 +922,14 @@ def calculate_dataset_map_by_pkl(pkl_file_path,coco_anno_path,out_path):
     with open(os.path.join(out_path,"map.json"),"w") as f:
         f.write(json.dumps(out, indent=4, separators=(',', ':')))
 
+def calculate_dataset_map_by_list(list_file_path,coco_anno_path,out_path):
+    with open(list_file_path, "rb") as f:
+        results = json.load(f)
+    bbox_results1 = mean_ap.list_json_to_bbox_list(results)
+    annotations = mean_ap.coco_to_annotation(coco_anno_path, len(bbox_results1))
+    _, out = mean_ap.eval_map(bbox_results1, annotations)
+    with open(os.path.join(out_path,"map.json"),"w") as f:
+        f.write(json.dumps(out, indent=4, separators=(',', ':')))
 
 def merge_ocr_to_json(ocr_anno_path,ocr_image_path,json_path,prefix="",args=None):
     args.anno_before_prefix = "gt_img_" if not args.anno_before_prefix else args.anno_before_prefix
