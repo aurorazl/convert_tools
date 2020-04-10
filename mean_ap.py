@@ -225,7 +225,7 @@ def tpfp_default(det_bboxes,
                 area = (bbox[2] - bbox[0] + 1) * (bbox[3] - bbox[1] + 1)
                 if area >= min_area and area < max_area:
                     fp[k, i] = 1
-    return tp, fp,ious_max
+    return tp, fp
 
 
 def get_cls_results(det_results, annotations, class_id):
@@ -311,7 +311,7 @@ def eval_map(det_results,
             zip(cls_dets, cls_gts, cls_gts_ignore,
                 [iou_thr for _ in range(num_imgs)],
                 [area_ranges for _ in range(num_imgs)]))
-        tp, fp,ious_max = tuple(zip(*tpfp))
+        tp, fp = tuple(zip(*tpfp))
         # calculate gt number of each scale
         # ignored gts or gts beyond the specific scale are not counted
         num_gts = np.zeros(num_scales, dtype=int)
