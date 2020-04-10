@@ -41,10 +41,11 @@ def upload_dataset(image_path, anno_path, project_id, dataset_id, verbose=False,
     cmd = ""
     if not ignore_image:
         cmd += "rm -rf " + os.path.join(target_image_base_path, "images") + ";"
-    cmd += "rm -f " + os.path.join(target_image_base_path, "list.json") + ";"
-    cmd += "rm -f " + os.path.join(target_json_base_path, "commit.json") + ";"
-    cmd += "rm -f " + os.path.join(target_json_base_path, "category.json") + ";"
-    cmd += "rm -rf " + os.path.join(target_json_base_path, "images") + ";"
+        cmd += "rm -f " + os.path.join(target_image_base_path, "list.json") + ";"
+    cmd += "sudo rm -f " + target_json_base_path + ";"
+    # cmd += "rm -f " + os.path.join(target_json_base_path, "commit.json") + ";"
+    # cmd += "rm -f " + os.path.join(target_json_base_path, "category.json") + ";"
+    # cmd += "rm -rf " + os.path.join(target_json_base_path, "images") + ";"
     if not ignore_image:
         cmd += "mkdir -p " + target_image_base_path + ";"
     cmd += "mkdir -p " + target_json_base_path + ";"
