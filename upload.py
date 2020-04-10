@@ -42,7 +42,7 @@ def upload_dataset(image_path, anno_path, project_id, dataset_id, verbose=False,
     if not ignore_image:
         cmd += "rm -rf " + os.path.join(target_image_base_path, "images") + ";"
         cmd += "rm -f " + os.path.join(target_image_base_path, "list.json") + ";"
-    cmd += "sudo rm -f " + target_json_base_path + ";"
+    cmd += "sudo rm -f " + os.path.join(config["nfs_base_path"], "label/private/tasks", dataset_id) + ";"
     # cmd += "rm -f " + os.path.join(target_json_base_path, "commit.json") + ";"
     # cmd += "rm -f " + os.path.join(target_json_base_path, "category.json") + ";"
     # cmd += "rm -rf " + os.path.join(target_json_base_path, "images") + ";"
