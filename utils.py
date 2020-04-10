@@ -152,6 +152,8 @@ def get_ocr_annotation(label_path: str) -> tuple:
             try:
                 if len(params)>8:
                     label = params[-1]
+                elif len(params)==8:
+                    label = ""
                 else:
                     label = params[8]
                 text_tags.append(label)
