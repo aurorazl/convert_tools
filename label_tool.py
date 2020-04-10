@@ -1205,23 +1205,23 @@ def run_command(args, command, nargs, parser):
         else:
             merge_json_to_ocr(nargs[0],nargs[1],args.prefix,args)
     elif command == "find_coco_dataset_category_ids":
-        if len(nargs)!=1:
+        if len(nargs)!=2:
             parser.print_help()
-            print("\n find_coco_dataset_category_ids [coco_anno_path] \n")
+            print("\n find_coco_dataset_category_ids [coco_anno_path] [out_path] \n")
         else:
-            find_coco_dataset_category_ids(nargs[0])
+            find_coco_dataset_category_ids(nargs[0],nargs[1])
     elif command == "find_voc_dataset_category_ids":
-        if len(nargs)!=1:
+        if len(nargs)!=2:
             parser.print_help()
-            print("\n find_voc_dataset_category_ids [voc_anno_path] \n")
+            print("\n find_voc_dataset_category_ids [voc_anno_path] [out_path] \n")
         else:
-            find_voc_dataset_category_ids(nargs[0])
+            find_voc_dataset_category_ids(nargs[0],nargs[1])
     elif command == "find_json_dataset_category_ids":
-        if len(nargs)!=1:
+        if len(nargs)!=2:
             parser.print_help()
-            print("\n find_json_dataset_category_ids [json_anno_path] \n")
+            print("\n find_json_dataset_category_ids [json_anno_path] [out_path] \n")
         else:
-            find_json_dataset_category_ids(nargs[0])
+            find_json_dataset_category_ids(nargs[0],nargs[1])
     else:
         parser.print_help()
 
