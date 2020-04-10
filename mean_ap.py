@@ -178,6 +178,7 @@ def tpfp_default(det_bboxes,
     # a certain scale
     tp = np.zeros((num_scales, num_dets), dtype=np.float32)
     fp = np.zeros((num_scales, num_dets), dtype=np.float32)
+    ious_max = np.zeros((num_scales, num_dets), dtype=np.float32)
 
     # if there is no gt bboxes in this image, then all det bboxes
     # within area range are false positives
@@ -189,7 +190,7 @@ def tpfp_default(det_bboxes,
                 det_bboxes[:, 3] - det_bboxes[:, 1] + 1)
             for i, (min_area, max_area) in enumerate(area_ranges):
                 fp[i, (det_areas >= min_area) & (det_areas < max_area)] = 1
-        return tp, fp
+        return tp, fp , ious_max
 
     ious = bbox_overlaps(det_bboxes, gt_bboxes)
     # for each det, the max iou with all gts
@@ -225,7 +226,7 @@ def tpfp_default(det_bboxes,
                 area = (bbox[2] - bbox[0] + 1) * (bbox[3] - bbox[1] + 1)
                 if area >= min_area and area < max_area:
                     fp[k, i] = 1
-    return tp, fp
+    return tp, fp , ious_max
 
 
 def get_cls_results(det_results, annotations, class_id):
@@ -296,6 +297,7 @@ def eval_map(det_results,
 
     pool = Pool(nproc)
     eval_results = []
+    det_iou = []
     for i in range(num_classes):
         # get gt and det bboxes of this class
         cls_dets, cls_gts, cls_gts_ignore = get_cls_results(
@@ -311,7 +313,8 @@ def eval_map(det_results,
             zip(cls_dets, cls_gts, cls_gts_ignore,
                 [iou_thr for _ in range(num_imgs)],
                 [area_ranges for _ in range(num_imgs)]))
-        tp, fp = tuple(zip(*tpfp))
+        tp, fp ,iou = tuple(zip(*tpfp))
+        det_iou.append(iou)
         # calculate gt number of each scale
         # ignored gts or gts beyond the specific scale are not counted
         num_gts = np.zeros(num_scales, dtype=int)
@@ -370,7 +373,7 @@ def eval_map(det_results,
 
     outdata = print_map_summary(
         mean_ap, eval_results, dataset, area_ranges, logger=logger)
-
+    print(det_iou)
     return mean_ap, outdata
 
 def bbox_overlaps(bboxes1, bboxes2, mode='iou'):
