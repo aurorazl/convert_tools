@@ -156,6 +156,8 @@ def get_ocr_annotation(label_path: str) -> tuple:
                     label = ""
                 else:
                     label = params[8]
+                if label.strip() == "###" or label == "***":
+                    continue
                 text_tags.append(label)
                 # if label == '*' or label == '###':
                 x1, y1, x2, y2, x3, y3, x4, y4 = list(map(float, params[:8]))
