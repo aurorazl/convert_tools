@@ -546,7 +546,7 @@ def iou_insert_results(li,ious):
     for i,category_li in enumerate(ious):
         for j,image_li in enumerate(category_li):
             for k,one in enumerate(image_li):
-                pos = index[i, j, k]
+                pos = int(index[i, j, k])
                 li[pos]["iou"] = one
 
 def _det2list(results):
@@ -667,7 +667,7 @@ if __name__ == '__main__':
     # bbox_results,_ = _segm2list(a)
 
     results = pkl_to_list_json("xray_test.pkl")
-    bbox_results1 = list_json_to_bbox_list(results)
+    bbox_results1 = list_json_to_bbox_list2(results)
     annotations = coco_to_annotation("/data/imagenet/x-ray/cocovis/tianchi/annotations/gt_val.json",len(bbox_results1))
     _,out,ious = eval_map(bbox_results1,annotations)
     iou_insert_results(results, ious)
