@@ -117,11 +117,11 @@ def get_dir_path_max_num(dir_path, prefix,args):
     return max_num
 
 def gen_image_name_list(anno_files_path,image_files_path,json_anno_path,prefix,args):
-    src_list = os.listdir(image_files_path)
+    src_list = os.listdir(anno_files_path)
     max_num = get_dir_path_max_num(json_anno_path, prefix,args)
     name_dict = {}
     pb = pyprind.ProgBar(len(src_list), monitor=True,title="counting src path specified prefix {} number".format(prefix))
-    gen_pattern = re.compile(r"{}(\d+)\.(jpg)".format(args.image_before_prefix))
+    gen_pattern = re.compile(r"{}(\d+)\.(xml|json|txt)".format(args.anno_before_prefix))
     for one in src_list:
         res = gen_pattern.match(one)
         if res:
