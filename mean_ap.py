@@ -179,7 +179,6 @@ def tpfp_default(det_bboxes,
     # a certain scale
     tp = np.zeros((num_scales, num_dets), dtype=np.float32)
     fp = np.zeros((num_scales, num_dets), dtype=np.float32)
-    ious_max = np.zeros((num_scales, num_dets), dtype=np.float32)
 
     # if there is no gt bboxes in this image, then all det bboxes
     # within area range are false positives
@@ -191,7 +190,7 @@ def tpfp_default(det_bboxes,
                 det_bboxes[:, 3] - det_bboxes[:, 1] + 1)
             for i, (min_area, max_area) in enumerate(area_ranges):
                 fp[i, (det_areas >= min_area) & (det_areas < max_area)] = 1
-        return tp, fp , ious_max
+        return tp, fp , [0 for _ in range(num_dets)]
 
     ious = bbox_overlaps(det_bboxes, gt_bboxes)
     # for each det, the max iou with all gts
@@ -671,4 +670,6 @@ if __name__ == '__main__':
     annotations = coco_to_annotation("/data/imagenet/x-ray/cocovis/tianchi/annotations/gt_val.json",len(bbox_results1))
     _,out,ious = eval_map(bbox_results1,annotations)
     iou_insert_results(results, ious)
-    print(results[:20])
+    for one in results:
+        if "iou" not in one:
+            raise Exception
