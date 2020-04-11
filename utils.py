@@ -139,7 +139,7 @@ def gen_image_name_list(anno_files_path,image_files_path,json_anno_path,prefix,a
     return name_dict
 
 def check_anno_and_image_both_exist(anno_files_path,image_files_path,image_id,args):
-    if not os.path.exists(os.path.join(anno_files_path,"{}{}.{}".format(args.anno_before_prefix,image_id,args.anno_before_suffix))):
+    if not os.path.exists(os.path.join(image_files_path,"{}{}.{}".format(args.image_before_prefix,image_id,args.image_before_suffix))):
         return False
     return True
 
