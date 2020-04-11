@@ -5,6 +5,7 @@ from terminaltables import AsciiTable
 from class_names import get_classes
 from pycocotools.coco import COCO
 import json
+import collections
 
 def average_precision(recalls, precisions, mode='area'):
     """Calculate average precision (for single or multiple scales).
@@ -373,8 +374,8 @@ def eval_map(det_results,
 
     outdata = print_map_summary(
         mean_ap, eval_results, dataset, area_ranges, logger=logger)
-    print(det_iou)
-    return mean_ap, outdata
+
+    return mean_ap, outdata,det_iou
 
 def bbox_overlaps(bboxes1, bboxes2, mode='iou'):
     """Calculate the ious between each bbox of bboxes1 and bboxes2.
@@ -493,7 +494,6 @@ def print_map_summary(mean_ap,
 
 def list_json_to_bbox_list(li):
     tmp = []
-    import collections
     category_ids = set()
     tem = collections.defaultdict(lambda : collections.defaultdict(lambda : []))
     for one in li:
@@ -505,9 +505,50 @@ def list_json_to_bbox_list(li):
         for category_id in category_ids:
             tem1.append([category_id,np.array(v.get(category_id,[])).astype(np.float32).reshape(-1,5)])
         tmp.append([k,list(map(lambda x:x[1],sorted(tem1,key=lambda x:x[0])))])
+        """tem:{"image_id":{"category_id":cls_det,...}}"""
+        """tem1: [[[category_id,cls2_det], [category_id,cls1_det], ...], ...]."""
+        """tmp: [ [image_id,[cls1_det,cls2_det ...], ...]."""
+        """return : [ [cls1_det,cls2_det ...], ...]."""
     return list(map(lambda x:x[1],sorted(tmp,key=lambda x:x[0])))
 
-CLASSES = ["metal_lighter", "lighter", "knife", "battery", "scissor"]
+index = None
+def list_json_to_bbox_list2(li):
+    category_ids = set()
+    image_ids = set()
+    tem = collections.defaultdict(lambda : collections.defaultdict(lambda : []))
+    tmp = []
+    max_num = collections.defaultdict(lambda : 0)
+    for one in li:
+        category_ids.add(one["category_id"])
+        image_ids.add(one["image_id"])
+        max_num["{}__{}".format(str(one["category_id"]),str(one["image_id"]))] += 1
+    sorted(category_ids)
+    sorted(image_ids)
+    global index
+    index = np.zeros((len(category_ids), len(image_ids),max((v for k,v in max_num.items()))))
+    for i,one in enumerate(li):
+        for j,l in enumerate(index[one["category_id"],one["image_id"]]):
+            if l==0:
+                index[one["category_id"], one["image_id"],j] = i
+                break
+        one["bbox"].append(one["score"])
+        tem[one["image_id"]][one["category_id"]].append(one["bbox"])
+        category_ids.add(one["category_id"])
+    for k,v in tem.items():
+        tem1 = []
+        for category_id in category_ids:
+            tem1.append([category_id,np.array(v.get(category_id,[])).astype(np.float32).reshape(-1,5)])
+        tmp.append([k,list(map(lambda x:x[1],sorted(tem1,key=lambda x:x[0])))])
+    return list(map(lambda x:x[1],sorted(tmp,key=lambda x:x[0])))
+
+def iou_insert_results(li,ious):
+    global index
+    for i,category_li in enumerate(ious):
+        for j,image_li in enumerate(category_li):
+            for k,one in enumerate(image_li):
+                pos = int(index[i, j, k])
+                li[pos]["iou"] = float(one)
+
 def _det2list(results):
     bbox_results = []
     for idx in range(len(results)):
@@ -618,14 +659,16 @@ def coco_to_annotation(coco_anno_path,length):
     return [get_ann_info(i, coco, img_infos, cat2label) for i in range(length)]
 
 if __name__ == '__main__':
-    with open("/data/imagenet/x-ray/cocovis/tianchi/annotations/val_result.segm.json") as f:
-        results = json.load(f)
+    # with open("/data/imagenet/x-ray/cocovis/tianchi/annotations/val_result.segm.json") as f:
+    #     results = json.load(f)
 
     # with open(r"xray_test.pkl", "rb") as f:
     #     a = pickle.load(f)
     # bbox_results,_ = _segm2list(a)
 
-    # results = pkl_to_list_json("xray_test.pkl")
-    bbox_results1 = list_json_to_bbox_list(results)
+    results = pkl_to_list_json("xray_test.pkl")
+    bbox_results1 = list_json_to_bbox_list2(results)
     annotations = coco_to_annotation("/data/imagenet/x-ray/cocovis/tianchi/annotations/gt_val.json",len(bbox_results1))
-    _,out = eval_map(bbox_results1,annotations)
+    _,out,ious = eval_map(bbox_results1,annotations)
+    iou_insert_results(results, ious)
+    print(results[:20])
