@@ -360,7 +360,7 @@ def merge_coco_to_json_dataset(coco_file_path,coco_image_path,json_path,prefix="
         json_dict = {}
         json_dict["images"] = coco.loadImgs([ImgID])
         if max_num==0 and not prefix:
-            new_image_id = json_dict["images"][0]["file_name"].split(".jpg")[0]
+            new_image_id = json_dict["images"][0]["id"]
         else:
             max_num += 1
             new_image_id = prefix + str(max_num)
