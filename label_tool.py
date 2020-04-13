@@ -927,10 +927,10 @@ def calculate_dataset_map_by_list(list_file_path,coco_anno_path,out_path):
     bbox_results1 = mean_ap.list_json_to_bbox_list2(results)
     annotations = mean_ap.coco_to_annotation(coco_anno_path, len(bbox_results1))
     iou_thrs = map(lambda x:x*0.1,list(range(1,10,1)))
-    MAP = {}
+    MAP = []
     for thr in iou_thrs:
         _, out,ious = mean_ap.eval_map(bbox_results1, annotations,iou_thr=thr)
-        MAP[thr] = out
+        MAP.append({"iouThr":thr,"data":out})
     result = {"map":MAP}
     with open(os.path.join(out_path,"map.json"),"w") as f:
         f.write(json.dumps(result, indent=4, separators=(',', ':')))
