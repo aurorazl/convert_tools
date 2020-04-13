@@ -481,8 +481,8 @@ def print_map_summary(mean_ap,
         else:
             label_names = dataset
 
-        if not isinstance(mean_ap, list):
-            mean_ap = [mean_ap]
+        if not isinstance(mean_ap[one_thr], list):
+            mean_ap[one_thr] = [mean_ap[one_thr]]
 
         header = ['category', 'gt_nums', 'det_nums', 'recall', 'ap']
         outdata = [['category', 'gt_nums', 'det_nums', 'recall', 'ap']]
@@ -505,7 +505,7 @@ def print_map_summary(mean_ap,
                 table_data.append(row_data)
                 MAP.append(one_map)
                 outdata.append(row_data)
-            table_data.append(['mAP', '', '', '', '{:.3f}'.format(mean_ap[i])])
+            table_data.append(['mAP', '', '', '', '{:.3f}'.format(mean_ap[one_thr][i])])
             table = AsciiTable(table_data)
             table.inner_footing_row_border = True
             print('\n' + table.table)
