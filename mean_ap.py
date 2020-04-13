@@ -300,7 +300,7 @@ def eval_map(det_results,
                    if scale_ranges is not None else None)
 
     pool = Pool(nproc)
-    eval_results = {}
+    eval_results = collections.defaultdict(lambda :[])
     det_iou = []
     print("starting calculate ious for iou_thr={}.............".format(str(iou_thr)))
     for i in range(num_classes):
@@ -365,14 +365,14 @@ def eval_map(det_results,
             all_ap = np.vstack([cls_result['ap'] for cls_result in eval_results[index]])
             all_num_gts = np.vstack(
                 [cls_result['num_gts'] for cls_result in eval_results[index]])
-            mean_ap = {}
+            mean_ap = collections.defaultdict(lambda :[])
             for i in range(num_scales):
                 if np.any(all_num_gts[:, i] > 0):
                     mean_ap[thr].append(all_ap[all_num_gts[:, i] > 0, i].mean())
                 else:
                     mean_ap[thr].append(0.0)
     else:
-        mean_ap = {}
+        mean_ap = collections.defaultdict(lambda :[])
         for index, thr in enumerate(iou_thr):
             aps = []
             for cls_result in eval_results[index]:
