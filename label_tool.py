@@ -924,11 +924,8 @@ def calculate_dataset_map_by_pkl(pkl_file_path,coco_anno_path,out_path):
     bbox_results = dataset.list_json_to_bbox_list2(results)
     annotations = dataset.coco_to_annotation(len(bbox_results))
     iou_thrs = map(lambda x: x * 0.1, list(range(1, 10, 1)))
-    MAP = []
-    for thr in iou_thrs:
-        _, out, ious = mean_ap.eval_map(bbox_results, annotations, iou_thr=thr)
-        MAP.append({"iouThr": thr, "data": out})
-    result = {"map": MAP}
+    out, ious = mean_ap.eval_map(bbox_results, annotations, iou_thr=iou_thrs)
+    result = {"map": ious}
     with open(os.path.join(out_path, "map.json"), "w") as f:
         f.write(json.dumps(result, indent=4, separators=(',', ':')))
 
@@ -940,14 +937,11 @@ def calculate_dataset_map_by_list(list_file_path,coco_anno_path,out_path):
     bbox_results = dataset.list_json_to_bbox_list2(results)
     annotations = dataset.coco_to_annotation(len(bbox_results))
     iou_thrs = map(lambda x:x*0.1,list(range(1,10,1)))
-    MAP = []
-    for thr in iou_thrs:
-        _, out,ious = mean_ap.eval_map(bbox_results, annotations,iou_thr=thr)
-        MAP.append({"iouThr":thr,"data":out})
+    _, out,ious = mean_ap.eval_map(bbox_results, annotations,iou_thr=iou_thrs)
     mean_ap.iou_insert_results(results, ious)
     with open(list_file_path,"w") as f:
         f.write(json.dumps(results, indent=4, separators=(',', ':')))
-    result = {"map":MAP}
+    result = {"map":out}
     with open(os.path.join(out_path,"map.json"),"w") as f:
         f.write(json.dumps(result, indent=4, separators=(',', ':')))
 

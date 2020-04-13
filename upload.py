@@ -11,8 +11,8 @@ from DirectoryUtils import cd
 
 
 def upload_dataset(image_path, anno_path, project_id, dataset_id, verbose=False, ignore_image=False):
-    utils.check_path_exist("commit.json")
-    utils.check_path_exist(anno_path)
+    assert os.path.exists("commit.json")
+    assert os.path.exists(anno_path)
     if not ignore_image:
         utils.check_path_exist(image_path)
         utils.check_path_exist("list.json")
@@ -174,20 +174,20 @@ def auto_upload_model_predict_result(anno_path, image_path, project_id, dataset_
         if file_type == ".json":
             with open(anno_path, "r") as f:
                 di = json.load(f)
+            assert type(di)==dict or type(di)==list
             if isinstance(di, dict):
                 print("uploading coco annotation file")
                 upload_model_predict_result_from_coco(anno_path, project_id, dataset_id, verbose, args)
             elif isinstance(di, list):
                 print("uploading list annotation file")
                 upload_model_predict_result_from_list(anno_path, project_id, dataset_id, verbose, args)
-            else:
-                raise Exception("wrong annotation file type")
         else:
             raise Exception("Only json suffix supported.")
     else:
         src_list = os.listdir(anno_path)
         first_file = src_list[0]
         file_type = os.path.splitext(first_file)[1]
+        assert file_type in [".xml", ".txt", ".json"]
         if file_type == ".xml":
             print("uploading voc annotation file")
             upload_model_predict_result_from_voc(anno_path, image_path, project_id, dataset_id, verbose, args)
@@ -197,8 +197,6 @@ def auto_upload_model_predict_result(anno_path, image_path, project_id, dataset_
         elif file_type == ".json":
             print("uploading json annotation file")
             upload_model_predict_result(anno_path, project_id, dataset_id, verbose)
-        else:
-            raise Exception("current support suffix : txt xml json")
 
 
 def auto_upload_dataset(anno_path, image_path, project_id, dataset_id, user_id, verbose=False, ignore_image=False,
@@ -210,18 +208,17 @@ def auto_upload_dataset(anno_path, image_path, project_id, dataset_id, user_id, 
         if file_type == ".json":
             with open(anno_path, "r") as f:
                 di = json.load(f)
-            if isinstance(di, dict):
-                print("uploading coco dataset")
-                upload_dataset_from_coco(anno_path, image_path, project_id, dataset_id, user_id, verbose, ignore_image,
-                                         args)
-            else:
-                raise Exception("wrong dataset type")
+            assert type(di)==dict
+            print("uploading coco dataset")
+            upload_dataset_from_coco(anno_path, image_path, project_id, dataset_id, user_id, verbose, ignore_image,
+                                     args)
         else:
             raise Exception("Only json suffix supported.")
     else:
         src_list = os.listdir(anno_path)
         first_file = src_list[0]
         file_type = os.path.splitext(first_file)[1]
+        assert file_type in [".xml",".txt",".json"]
         if file_type == ".xml":
             print("uploading voc dataset")
             if anno_path.endswith("/"):
@@ -239,8 +236,6 @@ def auto_upload_dataset(anno_path, image_path, project_id, dataset_id, user_id, 
         elif file_type == ".json":
             print("uploading json dataset")
             upload_dataset(image_path, anno_path, project_id, dataset_id, verbose, ignore_image)
-        else:
-            raise Exception("current support suffix : txt xml json")
 
 def upload_map_file_from_det_list_gt_coco(map_file_path,project_id, dataset_id,verbose=True):
     utils.check_path_exist(map_file_path)
