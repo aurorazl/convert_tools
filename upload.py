@@ -330,7 +330,7 @@ def run_command(args, command, nargs, parser):
         else:
             auto_upload_dataset(nargs[0], nargs[1], nargs[2], nargs[3], nargs[4], args.verbose, args.ignore_image, args)
     elif command == "upload-map-file":
-        if len(nargs) != 5:
+        if len(nargs) != 4:
             parser.print_help()
             print("upload-map-file [det_anno_path] [gt_anno_path] [project_id] [dataset_id]")
         else:
