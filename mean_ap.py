@@ -318,7 +318,7 @@ def eval_map(det_results,
             zip(cls_dets, cls_gts, cls_gts_ignore,
                 [iou_thr for _ in range(num_imgs)],
                 [area_ranges for _ in range(num_imgs)]))
-        tp, fp, iou = tuple(zip(*tpfp))
+        tp_gen, fp_gen, iou = tuple(zip(*tpfp))
         det_iou.append(iou)
         # calculate gt number of each scale
         # ignored gts or gts beyond the specific scale are not counted
@@ -338,8 +338,8 @@ def eval_map(det_results,
         sort_inds = np.argsort(-cls_dets[:, -1])
         eps = np.finfo(np.float32).eps
         for index,thr in enumerate(iou_thr):
-            tp =[i[index] for i in tp]
-            fp =[i[index] for i in fp]
+            tp =[i[index] for i in tp_gen]
+            fp =[i[index] for i in fp_gen]
             tp = np.hstack(tp)[:, sort_inds]
             fp = np.hstack(fp)[:, sort_inds]
             # calculate recall and precision with tp and fp
