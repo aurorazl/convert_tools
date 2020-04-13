@@ -27,6 +27,8 @@ import utils
 import glob
 import requests
 import mean_ap
+from mean_ap import CocoDataset
+
 filename_pattern = re.compile(r"(\S+)\.(xml|json|jpg|txt)")
 image_pattern = re.compile(r"(\S+)\.(jpg)")
 gen_pattern = re.compile(r"(\S*?)(\d+)\.(xml|json|txt)")
@@ -914,22 +916,31 @@ def generate_image_id_list_for_new_datasets(image_path,out_path):
         f.write(json.dumps({"ImgIDs": new_image_id_list}, indent=4, separators=(',', ':')))
 
 def calculate_dataset_map_by_pkl(pkl_file_path,coco_anno_path,out_path):
-    results = mean_ap.pkl_to_list_json(pkl_file_path,)
-    bbox_results1 = mean_ap.list_json_to_bbox_list(results)
-    annotations = mean_ap.coco_to_annotation(coco_anno_path, len(bbox_results1))
-    _, out = mean_ap.eval_map(bbox_results1, annotations)
-    with open(os.path.join(out_path,"map.json"),"w") as f:
-        f.write(json.dumps(out, indent=4, separators=(',', ':')))
+    dataset = CocoDataset()
+    dataset.load_annotations(coco_anno_path)
+    results = dataset.pkl_to_list_json(pkl_file_path)
+    bbox_results = dataset.list_json_to_bbox_list2(results)
+    annotations = dataset.coco_to_annotation(len(bbox_results))
+    iou_thrs = map(lambda x: x * 0.1, list(range(1, 10, 1)))
+    MAP = []
+    for thr in iou_thrs:
+        _, out, ious = mean_ap.eval_map(bbox_results, annotations, iou_thr=thr)
+        MAP.append({"iouThr": thr, "data": out})
+    result = {"map": MAP}
+    with open(os.path.join(out_path, "map.json"), "w") as f:
+        f.write(json.dumps(result, indent=4, separators=(',', ':')))
 
 def calculate_dataset_map_by_list(list_file_path,coco_anno_path,out_path):
     with open(list_file_path, "rb") as f:
         results = json.load(f)
-    bbox_results1 = mean_ap.list_json_to_bbox_list2(results)
-    annotations = mean_ap.coco_to_annotation(coco_anno_path, len(bbox_results1))
+    dataset = CocoDataset()
+    dataset.load_annotations(coco_anno_path)
+    bbox_results = dataset.list_json_to_bbox_list2(results)
+    annotations = dataset.coco_to_annotation(len(bbox_results))
     iou_thrs = map(lambda x:x*0.1,list(range(1,10,1)))
     MAP = []
     for thr in iou_thrs:
-        _, out,ious = mean_ap.eval_map(bbox_results1, annotations,iou_thr=thr)
+        _, out,ious = mean_ap.eval_map(bbox_results, annotations,iou_thr=thr)
         MAP.append({"iouThr":thr,"data":out})
     result = {"map":MAP}
     with open(os.path.join(out_path,"map.json"),"w") as f:
@@ -938,9 +949,11 @@ def calculate_dataset_map_by_list(list_file_path,coco_anno_path,out_path):
 def cal_iou_and_insert_results_for_list(list_file_path,coco_anno_path):
     with open(list_file_path, "rb") as f:
         results = json.load(f)
-    bbox_results1 = mean_ap.list_json_to_bbox_list2(results)
-    annotations = mean_ap.coco_to_annotation(coco_anno_path, len(bbox_results1))
-    _, out, ious = mean_ap.eval_map(bbox_results1, annotations)
+    dataset = CocoDataset()
+    dataset.load_annotations(coco_anno_path)
+    bbox_results = dataset.list_json_to_bbox_list2(results)
+    annotations = dataset.coco_to_annotation(len(bbox_results))
+    _, out, ious = mean_ap.eval_map(bbox_results, annotations)
     mean_ap.iou_insert_results(results, ious)
     with open(list_file_path,"w") as f:
         f.write(json.dumps(results, indent=4, separators=(',', ':')))
