@@ -931,8 +931,9 @@ def calculate_dataset_map_by_list(list_file_path,coco_anno_path,out_path):
     for thr in iou_thrs:
         _, out,ious = mean_ap.eval_map(bbox_results1, annotations,iou_thr=thr)
         MAP[thr] = out
+    result = {"map":MAP}
     with open(os.path.join(out_path,"map.json"),"w") as f:
-        f.write(json.dumps(MAP, indent=4, separators=(',', ':')))
+        f.write(json.dumps(result, indent=4, separators=(',', ':')))
 
 def merge_ocr_to_json(ocr_anno_path,ocr_image_path,json_path,prefix="",args=None):
     args.anno_before_prefix = "gt_img_" if not args.anno_before_prefix else args.anno_before_prefix

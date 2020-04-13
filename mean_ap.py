@@ -473,26 +473,35 @@ def print_map_summary(mean_ap,
     if not isinstance(mean_ap, list):
         mean_ap = [mean_ap]
 
-    header = ['class', 'gts', 'dets', 'recall', 'ap']
-    outdata = [['class', 'gts', 'dets', 'recall', 'ap']]
+    header = ['category', 'gt_nums', 'det_nums', 'recall', 'ap']
+    outdata = [['category', 'gt_nums', 'det_nums', 'recall', 'ap']]
+    MAP = []
     for i in range(num_scales):
         if scale_ranges is not None:
             print('Scale range {}'.format(scale_ranges[i]))
         table_data = [header]
         for j in range(num_classes):
+            one_map = {}
             row_data = [
                 label_names[j], int(num_gts[i, j]), int(results[j]['num_dets']),
                 '{:.3f}'.format(float(recalls[i, j])), '{:.3f}'.format(float(aps[i, j]))
             ]
+            one_map["category"] = label_names[j]
+            one_map["gt_nums"] = int(num_gts[i, j])
+            one_map["det_nums"] = int(results[j]['num_dets'])
+            one_map["recall"] = float(recalls[i, j])
+            one_map["ap"] = float(aps[i, j])
             table_data.append(row_data)
-
+            MAP.append(one_map)
             outdata.append(row_data)
         table_data.append(['mAP', '', '', '', '{:.3f}'.format(mean_ap[i])])
         table = AsciiTable(table_data)
         table.inner_footing_row_border = True
         print('\n' + table.table)
 
-    return outdata
+
+
+    return MAP
 
 def list_json_to_bbox_list(li):
     tmp = []
@@ -692,4 +701,5 @@ if __name__ == '__main__':
     annotations = coco_to_annotation("/data/imagenet/RPC_dataset/instances_test2019.json",len(bbox_results1))
     _,out,ious = eval_map(bbox_results1,annotations)
     iou_insert_results(results, ious)
+    print(ious)
 
