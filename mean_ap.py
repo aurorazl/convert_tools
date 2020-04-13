@@ -535,14 +535,18 @@ def list_json_to_bbox_list2(li):
         image_ids.add(one["image_id"])
         max_num["{}__{}".format(str(one["category_id"]),str(one["image_id"]))] += 1
         pbar.update()
-    category_ids = list(sorted(category_ids))
-    image_ids = list(sorted(image_ids))
+    category_ids = sorted(category_ids)
+    # image_ids = sorted(image_ids)
+    category_ids = list(category_ids)
+    image_ids = list(image_ids)
     global index
     index = np.zeros((len(category_ids), len(image_ids),max((v for k,v in max_num.items()))))
     pbar = pyprind.ProgBar(len(li), monitor=True, title="mapping bbox index according to category_id and image_id")
     for i,one in enumerate(li):
-        x = utils.sort_list_search_int(category_ids,one["category_id"])
-        y = utils.sort_list_search_int(image_ids,one["image_id"])
+        # x = utils.sort_list_search_int(category_ids,one["category_id"])
+        # y = utils.sort_list_search_int(image_ids,one["image_id"])
+        x = category_ids.index(one["category_id"])
+        y = image_ids.index(one["image_id"])
         for j,l in enumerate(index[x,y]):
             if l==0:
                 index[x,y,j] = i
@@ -588,101 +592,102 @@ def _segm2list(results):
         segm_results.append(seg)
     return bbox_results, segm_results
 
-def _parse_ann_info(img_info, ann_info,cat2label):
-    """Parse bbox and mask annotation.
-    Args:
-        ann_info (list[dict]): Annotation info of an image.
-        with_mask (bool): Whether to parse mask annotations.
-    Returns:
-        dict: A dict containing the following keys: bboxes, bboxes_ignore,
-            labels, masks, seg_map. "masks" are raw annotations and not
-            decoded into binary masks.
-    """
-    gt_bboxes = []
-    gt_labels = []
-    gt_bboxes_ignore = []
-    gt_masks_ann = []
+class CocoDataset(object):
 
-    for i, ann in enumerate(ann_info):
-        if ann.get('ignore', False):
-            continue
-        x1, y1, w, h = ann['bbox']
-        if ann['area'] == [] or ann['area'] <= 0 or w < 1 or h < 1:
-            continue
-        bbox = [x1, y1, x1 + w - 1, y1 + h - 1]
-        if ann.get('iscrowd', False):
-            gt_bboxes_ignore.append(bbox)
+    def load_annotations(self,ann_file):
+        self.coco = COCO(ann_file)
+        self.cat_ids = self.coco.getCatIds()
+        self.cat2label = {
+            cat_id: i + 1
+            for i, cat_id in enumerate(self.cat_ids)
+        }
+        self.img_ids = self.coco.getImgIds()
+        self.img_infos = []
+        for i in self.img_ids:
+            info = self.coco.loadImgs([i])[0]
+            info['filename'] = info['file_name']
+            self.img_infos.append(info)
+
+    def get_ann_info(self,idx):
+        img_id = self.img_infos[idx]['id']
+        ann_ids = self.coco.getAnnIds(imgIds=[img_id])
+        ann_info = self.coco.loadAnns(ann_ids)
+        return self._parse_ann_info(self.img_infos[idx], ann_info)
+
+    def _parse_ann_info(self,img_info, ann_info):
+        """Parse bbox and mask annotation.
+        Args:
+            ann_info (list[dict]): Annotation info of an image.
+            with_mask (bool): Whether to parse mask annotations.
+        Returns:
+            dict: A dict containing the following keys: bboxes, bboxes_ignore,
+                labels, masks, seg_map. "masks" are raw annotations and not
+                decoded into binary masks.
+        """
+        gt_bboxes = []
+        gt_labels = []
+        gt_bboxes_ignore = []
+        gt_masks_ann = []
+
+        for i, ann in enumerate(ann_info):
+            if ann.get('ignore', False):
+                continue
+            x1, y1, w, h = ann['bbox']
+            if ann['area'] == [] or ann['area'] <= 0 or w < 1 or h < 1:
+                continue
+            bbox = [x1, y1, x1 + w - 1, y1 + h - 1]
+            if ann.get('iscrowd', False):
+                gt_bboxes_ignore.append(bbox)
+            else:
+                gt_bboxes.append(bbox)
+                gt_labels.append(self.cat2label[ann['category_id']])
+                gt_masks_ann.append(ann['segmentation'])
+
+        if gt_bboxes:
+            gt_bboxes = np.array(gt_bboxes, ndmin=2, dtype=np.float32)
+            gt_labels = np.array(gt_labels, dtype=np.int64)
         else:
-            gt_bboxes.append(bbox)
-            gt_labels.append(cat2label[ann['category_id']])
-            gt_masks_ann.append(ann['segmentation'])
+            gt_bboxes = np.zeros((0, 4), dtype=np.float32)
+            gt_labels = np.array([], dtype=np.int64)
 
-    if gt_bboxes:
-        gt_bboxes = np.array(gt_bboxes, ndmin=2, dtype=np.float32)
-        gt_labels = np.array(gt_labels, dtype=np.int64)
-    else:
-        gt_bboxes = np.zeros((0, 4), dtype=np.float32)
-        gt_labels = np.array([], dtype=np.int64)
+        if gt_bboxes_ignore:
+            gt_bboxes_ignore = np.array(gt_bboxes_ignore, ndmin=2, dtype=np.float32)
+        else:
+            gt_bboxes_ignore = np.zeros((0, 4), dtype=np.float32)
 
-    if gt_bboxes_ignore:
-        gt_bboxes_ignore = np.array(gt_bboxes_ignore, ndmin=2, dtype=np.float32)
-    else:
-        gt_bboxes_ignore = np.zeros((0, 4), dtype=np.float32)
+        seg_map = img_info['filename'].replace('jpg', 'png')
 
-    seg_map = img_info['filename'].replace('jpg', 'png')
+        ann = dict(
+            bboxes=gt_bboxes,
+            labels=gt_labels,
+            bboxes_ignore=gt_bboxes_ignore,
+            masks=gt_masks_ann,
+            seg_map=seg_map)
 
-    ann = dict(
-        bboxes=gt_bboxes,
-        labels=gt_labels,
-        bboxes_ignore=gt_bboxes_ignore,
-        masks=gt_masks_ann,
-        seg_map=seg_map)
+        return ann
 
-    return ann
-
-def load_annotations(ann_file):
-    coco = COCO(ann_file)
-    cat_ids = coco.getCatIds()
-    cat2label = {
-        cat_id: i + 1
-        for i, cat_id in enumerate(cat_ids)
-    }
-    img_ids = coco.getImgIds()
-    img_infos = []
-    for i in img_ids:
-        info = coco.loadImgs([i])[0]
-        info['filename'] = info['file_name']
-        img_infos.append(info)
-    return img_infos,cat2label,coco
-
-def get_ann_info(idx,coco,img_infos,cat2label):
-    img_id = img_infos[idx]['id']
-    ann_ids = coco.getAnnIds(imgIds=[img_id])
-    ann_info = coco.loadAnns(ann_ids)
-    return _parse_ann_info(img_infos[idx], ann_info,cat2label)
+    def pkl_to_list_json(self,path):
+        with open(path, "rb") as f:
+            a = pickle.load(f)
+        c = []
+        for index, one in enumerate(a):
+            for id, i in enumerate(one[0]):
+                for j in i:
+                    d = j.tolist()
+                    c.append({"bbox": d[:4], "score": d[4], "image_id": self.img_ids[index], "category_id": self.cat_ids[id]})
+        return c
 
 def list_json_to_anno_list(li):
     tmp=[]
     for one in li:
         tmp.append({"bboxes":one["bbox"],"labels":[]})
 
-def pkl_to_list_json(path):
-    with open(path, "rb") as f:
-        a = pickle.load(f)
-    c = []
-    for index, one in enumerate(a):
-        for id, i in enumerate(one[0]):
-            for j in i:
-                d = j.tolist()
-                c.append({"bbox": d[:4], "score": d[4], "image_id": index, "category_id": id})
-    return c
-
-def coco_to_annotation(coco_anno_path,length):
-    img_infos, cat2label, coco = load_annotations(coco_anno_path)
+def coco_to_annotation(coco_anno_path,length,dataset):
+    dataset.load_annotations(coco_anno_path)
     annotations = []
     pbar = pyprind.ProgBar(length, monitor=True, title="coco to annotation")
     for i in range(length):
-        annotations.append(get_ann_info(i, coco, img_infos, cat2label))
+        annotations.append(dataset.get_ann_info(i))
         pbar.update()
     return annotations
 
@@ -693,10 +698,11 @@ if __name__ == '__main__':
     # with open(r"xray_test.pkl", "rb") as f:
     #     a = pickle.load(f)
     # bbox_results,_ = _segm2list(a)
-
-    # results = pkl_to_list_json("xray_test.pkl")
+    dataset = CocoDataset()
+    results = dataset.pkl_to_list_json("xray_test.pkl")
     bbox_results1 = list_json_to_bbox_list2(results)
-    annotations = coco_to_annotation("/data/imagenet/RPC_dataset/instances_test2019.json",len(bbox_results1))
+    annotations = coco_to_annotation("/data/imagenet/RPC_dataset/instances_test2019.json",len(bbox_results1),dataset)
+    # category_id后面有排序，需要image_id对应即可
     _,out,ious = eval_map(bbox_results1,annotations)
     iou_insert_results(results, ious)
     print(out)
