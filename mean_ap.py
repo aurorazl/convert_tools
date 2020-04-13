@@ -682,7 +682,7 @@ def list_json_to_anno_list(li):
     for one in li:
         tmp.append({"bboxes":one["bbox"],"labels":[]})
 
-def coco_to_annotation(coco_anno_path,length,dataset):
+def coco_to_annotation(length,dataset):
     annotations = []
     pbar = pyprind.ProgBar(length, monitor=True, title="coco to annotation")
     for i in range(length):
@@ -691,17 +691,17 @@ def coco_to_annotation(coco_anno_path,length,dataset):
     return annotations
 
 if __name__ == '__main__':
-    with open("/data/imagenet/RPC_dataset/rpc_test_result/bbox_results.json") as f:
+    with open("/data/imagenet/x-ray/cocovis/tianchi/annotations/res0413/xray_test.segm.json") as f:
         results = json.load(f)
 
     # with open(r"xray_test.pkl", "rb") as f:
     #     a = pickle.load(f)
     # bbox_results,_ = _segm2list(a)
     dataset = CocoDataset()
-    dataset.load_annotations("/data/imagenet/RPC_dataset/instances_test2019.json")
-    results = dataset.pkl_to_list_json("xray_test.pkl")
+    dataset.load_annotations("/data/imagenet/x-ray/cocovis/tianchi/annotations/gt_val.json")
+    # results = dataset.pkl_to_list_json("/data/imagenet/x-ray/cocovis/tianchi/annotations/res0413/xray_test.pkl")
     bbox_results1 = list_json_to_bbox_list2(results)
-    annotations = coco_to_annotation("/data/imagenet/RPC_dataset/instances_test2019.json",len(bbox_results1),dataset)
+    annotations = coco_to_annotation(len(bbox_results1),dataset)
     # category_id后面有排序，需要image_id对应即可
     _,out,ious = eval_map(bbox_results1,annotations)
     iou_insert_results(results, ious)
