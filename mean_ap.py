@@ -701,5 +701,5 @@ if __name__ == '__main__':
     annotations = coco_to_annotation("/data/imagenet/RPC_dataset/instances_test2019.json",len(bbox_results1))
     _,out,ious = eval_map(bbox_results1,annotations)
     iou_insert_results(results, ious)
-    print(ious)
+    print(out)
 
