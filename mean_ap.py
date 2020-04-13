@@ -542,7 +542,7 @@ def list_json_to_bbox_list2(li):
         one["bbox"].append(one["score"])
         tem[one["image_id"]][one["category_id"]].append(one["bbox"])
         pbar.update()
-    pbar = pyprind.ProgBar(len(li), monitor=True, title="sort list by category_id and image_id")
+    pbar = pyprind.ProgBar(len(tem), monitor=True, title="sort list by category_id and image_id")
     for k,v in tem.items():
         tem1 = []
         for category_id in category_ids:
@@ -553,7 +553,7 @@ def list_json_to_bbox_list2(li):
 
 def iou_insert_results(li,ious):
     global index
-    pbar = pyprind.ProgBar(ious.shape[0], monitor=True, title="iou insert into list")
+    pbar = pyprind.ProgBar(len(ious), monitor=True, title="iou insert into list")
     for i,category_li in enumerate(ious):
         for j,image_li in enumerate(category_li):
             for k,one in enumerate(image_li):
