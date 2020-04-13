@@ -664,16 +664,16 @@ def coco_to_annotation(coco_anno_path,length):
     return [get_ann_info(i, coco, img_infos, cat2label) for i in range(length)]
 
 if __name__ == '__main__':
-    # with open("/data/imagenet/x-ray/cocovis/tianchi/annotations/val_result.segm.json") as f:
-    #     results = json.load(f)
+    with open("/data/imagenet/RPC_dataset/rpc_test_result/bbox_results.json") as f:
+        results = json.load(f)
 
     # with open(r"xray_test.pkl", "rb") as f:
     #     a = pickle.load(f)
     # bbox_results,_ = _segm2list(a)
 
-    results = pkl_to_list_json("xray_test.pkl")
+    # results = pkl_to_list_json("xray_test.pkl")
     bbox_results1 = list_json_to_bbox_list2(results)
-    annotations = coco_to_annotation("/data/imagenet/x-ray/cocovis/tianchi/annotations/gt_val.json",len(bbox_results1))
+    annotations = coco_to_annotation("/data/imagenet/RPC_dataset/instances_test2019.json",len(bbox_results1))
     _,out,ious = eval_map(bbox_results1,annotations)
     iou_insert_results(results, ious)
 
