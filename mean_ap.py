@@ -524,6 +524,8 @@ def list_json_to_bbox_list2(li):
         max_num["{}__{}".format(str(one["category_id"]),str(one["image_id"]))] += 1
     sorted(category_ids)
     sorted(image_ids)
+    category_ids = list(category_ids)
+    image_ids = list(image_ids)
     global index
     index = np.zeros((len(category_ids), len(image_ids),max((v for k,v in max_num.items()))))
     for i,one in enumerate(li):
@@ -535,7 +537,6 @@ def list_json_to_bbox_list2(li):
                 break
         one["bbox"].append(one["score"])
         tem[one["image_id"]][one["category_id"]].append(one["bbox"])
-        category_ids.add(one["category_id"])
     for k,v in tem.items():
         tem1 = []
         for category_id in category_ids:
