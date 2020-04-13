@@ -896,6 +896,8 @@ def module_predict_segmentation_list_to_json(list_file_path,json_path,base_categ
                          }
         if "score" in one:
             anno_dict["score"] = one["score"]
+        if "iou" in one:
+            anno_dict["iou"] = one["iou"]
         json_dict[one["image_id"]]["annotations"].append(anno_dict)
         pbar.update()
     pbar = pyprind.ProgBar(len(json_dict), monitor=True, title="writing to file")
@@ -942,6 +944,9 @@ def calculate_dataset_map_by_list(list_file_path,coco_anno_path,out_path):
     for thr in iou_thrs:
         _, out,ious = mean_ap.eval_map(bbox_results, annotations,iou_thr=thr)
         MAP.append({"iouThr":thr,"data":out})
+    mean_ap.iou_insert_results(results, ious)
+    with open(list_file_path,"w") as f:
+        f.write(json.dumps(results, indent=4, separators=(',', ':')))
     result = {"map":MAP}
     with open(os.path.join(out_path,"map.json"),"w") as f:
         f.write(json.dumps(result, indent=4, separators=(',', ':')))
@@ -1263,6 +1268,12 @@ def run_command(args, command, nargs, parser):
             print("\n calculate_dataset_map_by_list [list_file_path] [coco_anno_path] [out_path] \n")
         else:
             calculate_dataset_map_by_list(nargs[0],nargs[1],nargs[2])
+    elif command == "cal_iou_and_insert_results_for_list":
+        if len(nargs)!=2:
+            parser.print_help()
+            print("\n cal_iou_and_insert_results_for_list [list_file_path] [coco_anno_path]\n")
+        else:
+            cal_iou_and_insert_results_for_list(nargs[0],nargs[1])
     else:
         parser.print_help()
 
