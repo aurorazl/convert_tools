@@ -192,7 +192,7 @@ def tpfp_default(det_bboxes,
                 det_bboxes[:, 3] - det_bboxes[:, 1] + 1)
             for i, (min_area, max_area) in enumerate(area_ranges):
                 fp[:,i, (det_areas >= min_area) & (det_areas < max_area)] = 1
-        return tp, fp , [0 for _ in range(num_dets)]
+        return tp, fp , [0 for _ in range(num_dets)]*thr_nums
 
     ious = bbox_overlaps(det_bboxes, gt_bboxes)
     # for each det, the max iou with all gts
@@ -230,7 +230,7 @@ def tpfp_default(det_bboxes,
                     area = (bbox[2] - bbox[0] + 1) * (bbox[3] - bbox[1] + 1)
                     if area >= min_area and area < max_area:
                         fp[thr_index,k, i] = 1
-    return tp, fp , ious_max
+    return tp, fp , np.tile(ious_max,(thr_nums,1))
 
 
 def get_cls_results(det_results, annotations, class_id):
@@ -338,8 +338,8 @@ def eval_map(det_results,
         sort_inds = np.argsort(-cls_dets[:, -1])
         eps = np.finfo(np.float32).eps
         for index,thr in enumerate(iou_thr):
-            tp = np.hstack(tp[index])[:, sort_inds]
-            fp = np.hstack(fp[index])[:, sort_inds]
+            tp = np.hstack(tp)[index][:, sort_inds]
+            fp = np.hstack(fp)[index][:, sort_inds]
             # calculate recall and precision with tp and fp
             tp = np.cumsum(tp, axis=1)
             fp = np.cumsum(fp, axis=1)
