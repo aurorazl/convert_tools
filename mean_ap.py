@@ -683,7 +683,6 @@ def list_json_to_anno_list(li):
         tmp.append({"bboxes":one["bbox"],"labels":[]})
 
 def coco_to_annotation(coco_anno_path,length,dataset):
-    dataset.load_annotations(coco_anno_path)
     annotations = []
     pbar = pyprind.ProgBar(length, monitor=True, title="coco to annotation")
     for i in range(length):
@@ -699,6 +698,7 @@ if __name__ == '__main__':
     #     a = pickle.load(f)
     # bbox_results,_ = _segm2list(a)
     dataset = CocoDataset()
+    dataset.load_annotations("/data/imagenet/RPC_dataset/instances_test2019.json")
     results = dataset.pkl_to_list_json("xray_test.pkl")
     bbox_results1 = list_json_to_bbox_list2(results)
     annotations = coco_to_annotation("/data/imagenet/RPC_dataset/instances_test2019.json",len(bbox_results1),dataset)
