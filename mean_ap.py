@@ -300,7 +300,7 @@ def eval_map(det_results,
                    if scale_ranges is not None else None)
 
     pool = Pool(nproc)
-    eval_results = collections.defaultdict(lambda :[])
+    eval_results = {}
     det_iou = []
     print("starting calculate ious for iou_thr={}.............".format(str(iou_thr)))
     for i in range(num_classes):
