@@ -547,6 +547,9 @@ def iou_insert_results(li,ious):
             for k,one in enumerate(image_li):
                 pos = int(index[i, j, k])
                 li[pos]["iou"] = float(one)
+    for one in li:
+        if "iou" not in one:
+            raise Exception("missing one iou")
 
 def _det2list(results):
     bbox_results = []
@@ -670,6 +673,4 @@ if __name__ == '__main__':
     annotations = coco_to_annotation("/data/imagenet/x-ray/cocovis/tianchi/annotations/gt_val.json",len(bbox_results1))
     _,out,ious = eval_map(bbox_results1,annotations)
     iou_insert_results(results, ious)
-    for one in results:
-        if "iou" not in one:
-            raise Exception
+
