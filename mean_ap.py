@@ -546,7 +546,7 @@ def list_json_to_bbox_list2(li):
     for k,v in tem.items():
         tem1 = []
         for category_id in category_ids:
-            tem1.append([category_id,np.array(v.get(category_id,[])).astype(np.float32).reshape(-1,len(category_ids))])
+            tem1.append([category_id,np.array(v.get(category_id,[])).astype(np.float32).reshape(-1,5)]) # 5 is x1,y1,x2,y2,score
         tmp.append([k,list(map(lambda x:x[1],sorted(tem1,key=lambda x:x[0])))])
         pbar.update()
     return list(map(lambda x:x[1],sorted(tmp,key=lambda x:x[0])))
