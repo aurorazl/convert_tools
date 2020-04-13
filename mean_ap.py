@@ -543,9 +543,8 @@ def list_json_to_bbox_list2(li):
     index = np.zeros((len(category_ids), len(image_ids),max((v for k,v in max_num.items()))))
     pbar = pyprind.ProgBar(len(li), monitor=True, title="mapping bbox index according to category_id and image_id")
     for i,one in enumerate(li):
-        # x = utils.sort_list_search_int(category_ids,one["category_id"])
+        x = utils.sort_list_search_int(category_ids,one["category_id"])
         # y = utils.sort_list_search_int(image_ids,one["image_id"])
-        x = category_ids.index(one["category_id"])
         y = image_ids.index(one["image_id"])
         for j,l in enumerate(index[x,y]):
             if l==0:
@@ -561,7 +560,7 @@ def list_json_to_bbox_list2(li):
             tem1.append([category_id,np.array(v.get(category_id,[])).astype(np.float32).reshape(-1,5)]) # 5 is x1,y1,x2,y2,score
         tmp.append([k,list(map(lambda x:x[1],sorted(tem1,key=lambda x:x[0])))])
         pbar.update()
-    return list(map(lambda x:x[1],sorted(tmp,key=lambda x:x[0])))
+    return list(map(lambda x:x[1],sorted(tmp,key=lambda x:image_ids.index(x[0]))))
 
 def iou_insert_results(li,ious):
     global index
