@@ -523,44 +523,7 @@ def list_json_to_bbox_list(li):
     return list(map(lambda x:x[1],sorted(tmp,key=lambda x:x[0])))
 
 index = None
-def list_json_to_bbox_list2(li):
-    category_ids = set()
-    image_ids = set()
-    tem = collections.defaultdict(lambda : collections.defaultdict(lambda : []))
-    tmp = []
-    max_num = collections.defaultdict(lambda : 0)
-    pbar = pyprind.ProgBar(len(li), monitor=True, title="counting category_id and image_id")
-    for one in li:
-        category_ids.add(one["category_id"])
-        image_ids.add(one["image_id"])
-        max_num["{}__{}".format(str(one["category_id"]),str(one["image_id"]))] += 1
-        pbar.update()
-    category_ids = sorted(category_ids)
-    # image_ids = sorted(image_ids)
-    category_ids = list(category_ids)
-    image_ids = list(image_ids)
-    global index
-    index = np.zeros((len(category_ids), len(image_ids),max((v for k,v in max_num.items()))))
-    pbar = pyprind.ProgBar(len(li), monitor=True, title="mapping bbox index according to category_id and image_id")
-    for i,one in enumerate(li):
-        x = utils.sort_list_search_int(category_ids,one["category_id"])
-        # y = utils.sort_list_search_int(image_ids,one["image_id"])
-        y = image_ids.index(one["image_id"])
-        for j,l in enumerate(index[x,y]):
-            if l==0:
-                index[x,y,j] = i
-                break
-        one["bbox"].append(one["score"])
-        tem[one["image_id"]][one["category_id"]].append(one["bbox"])
-        pbar.update()
-    pbar = pyprind.ProgBar(len(tem), monitor=True, title="sort list by category_id and image_id")
-    for k,v in tem.items():
-        tem1 = []
-        for category_id in category_ids:
-            tem1.append([category_id,np.array(v.get(category_id,[])).astype(np.float32).reshape(-1,5)]) # 5 is x1,y1,x2,y2,score
-        tmp.append([k,list(map(lambda x:x[1],sorted(tem1,key=lambda x:x[0])))])
-        pbar.update()
-    return list(map(lambda x:x[1],sorted(tmp,key=lambda x:image_ids.index(x[0]))))
+
 
 def iou_insert_results(li,ious):
     global index
@@ -676,18 +639,49 @@ class CocoDataset(object):
                     c.append({"bbox": d[:4], "score": d[4], "image_id": self.img_ids[index], "category_id": self.cat_ids[id]})
         return c
 
+    def coco_to_annotation(self,length):
+        annotations = []
+        pbar = pyprind.ProgBar(length, monitor=True, title="coco to annotation")
+        for i in range(length):
+            annotations.append(self.get_ann_info(i))
+            pbar.update()
+        return annotations
+
+    def list_json_to_bbox_list2(self,li):
+        tem = collections.defaultdict(lambda : collections.defaultdict(lambda : []))
+        tmp = []
+        max_num = collections.defaultdict(lambda : 0)
+        pbar = pyprind.ProgBar(len(li), monitor=True, title="counting category_id and image_id")
+        for one in li:
+            max_num["{}__{}".format(str(one["category_id"]),str(one["image_id"]))] += 1
+            pbar.update()
+        global index
+        index = np.zeros((len(self.cat_ids), len(self.img_ids),max((v for k,v in max_num.items()))))
+        pbar = pyprind.ProgBar(len(li), monitor=True, title="mapping bbox index according to category_id and image_id")
+        for i,one in enumerate(li):
+            x = utils.sort_list_search_int(self.cat_ids,one["category_id"])
+            # y = utils.sort_list_search_int(image_ids,one["image_id"])
+            y = self.img_ids.index(one["image_id"])
+            for j,l in enumerate(index[x,y]):
+                if l==0:
+                    index[x,y,j] = i
+                    break
+            one["bbox"].append(one["score"])
+            tem[one["image_id"]][one["category_id"]].append(one["bbox"])
+            pbar.update()
+        pbar = pyprind.ProgBar(len(tem), monitor=True, title="sort list by category_id and image_id")
+        for k,v in tem.items():
+            tem1 = []
+            for category_id in self.cat_ids:
+                tem1.append([category_id,np.array(v.get(category_id,[])).astype(np.float32).reshape(-1,5)]) # 5 is x1,y1,x2,y2,score
+            tmp.append([k,list(map(lambda x:x[1],sorted(tem1,key=lambda x:x[0])))])
+            pbar.update()
+        return list(map(lambda x:x[1],sorted(tmp,key=lambda x:self.img_ids.index(x[0]))))
+
 def list_json_to_anno_list(li):
     tmp=[]
     for one in li:
         tmp.append({"bboxes":one["bbox"],"labels":[]})
-
-def coco_to_annotation(length,dataset):
-    annotations = []
-    pbar = pyprind.ProgBar(length, monitor=True, title="coco to annotation")
-    for i in range(length):
-        annotations.append(dataset.get_ann_info(i))
-        pbar.update()
-    return annotations
 
 if __name__ == '__main__':
     with open("/data/imagenet/x-ray/cocovis/tianchi/annotations/res0413/xray_test.segm.json") as f:
@@ -699,8 +693,8 @@ if __name__ == '__main__':
     dataset = CocoDataset()
     dataset.load_annotations("/data/imagenet/x-ray/cocovis/tianchi/annotations/gt_val.json")
     # results = dataset.pkl_to_list_json("/data/imagenet/x-ray/cocovis/tianchi/annotations/res0413/xray_test.pkl")
-    bbox_results1 = list_json_to_bbox_list2(results)
-    annotations = coco_to_annotation(len(bbox_results1),dataset)
+    bbox_results1 = dataset.list_json_to_bbox_list2(results)
+    annotations = dataset.coco_to_annotation(len(bbox_results1))
     # category_id后面有排序，需要image_id对应即可
     _,out,ious = eval_map(bbox_results1,annotations)
     iou_insert_results(results, ious)
