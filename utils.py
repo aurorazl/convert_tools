@@ -204,7 +204,6 @@ def sort_list_search_int(li, val):
             low = mid + 1
             # print("low",low)
         else:
-            print(count)
             return mid
     else:
         return None
