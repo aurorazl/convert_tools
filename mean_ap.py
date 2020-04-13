@@ -535,10 +535,8 @@ def list_json_to_bbox_list2(li):
         image_ids.add(one["image_id"])
         max_num["{}__{}".format(str(one["category_id"]),str(one["image_id"]))] += 1
         pbar.update()
-    sorted(category_ids)
-    sorted(image_ids)
-    category_ids = list(category_ids)
-    image_ids = list(image_ids)
+    category_ids = list(sorted(category_ids))
+    image_ids = list(sorted(image_ids))
     global index
     index = np.zeros((len(category_ids), len(image_ids),max((v for k,v in max_num.items()))))
     pbar = pyprind.ProgBar(len(li), monitor=True, title="mapping bbox index according to category_id and image_id")
