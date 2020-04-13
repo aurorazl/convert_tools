@@ -207,5 +207,4 @@ def sort_list_search_int(li, val):
             print(count)
             return mid
     else:
-        print(count)
         return None
