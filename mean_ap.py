@@ -192,7 +192,7 @@ def tpfp_default(det_bboxes,
                 det_bboxes[:, 3] - det_bboxes[:, 1] + 1)
             for i, (min_area, max_area) in enumerate(area_ranges):
                 fp[:,i, (det_areas >= min_area) & (det_areas < max_area)] = 1
-        return tp, fp , [0 for _ in range(num_dets)]*thr_nums
+        return tp, fp , np.tile([0 for _ in range(num_dets)],(thr_nums,1))
 
     ious = bbox_overlaps(det_bboxes, gt_bboxes)
     # for each det, the max iou with all gts
