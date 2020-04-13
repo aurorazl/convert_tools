@@ -7,6 +7,7 @@ from pycocotools.coco import COCO
 import json
 import collections
 import utils
+import pyprind
 
 def average_precision(recalls, precisions, mode='area'):
     """Calculate average precision (for single or multiple scales).
@@ -518,16 +519,19 @@ def list_json_to_bbox_list2(li):
     tem = collections.defaultdict(lambda : collections.defaultdict(lambda : []))
     tmp = []
     max_num = collections.defaultdict(lambda : 0)
+    pbar = pyprind.ProgBar(len(li), monitor=True, title="counting category_id and image_id")
     for one in li:
         category_ids.add(one["category_id"])
         image_ids.add(one["image_id"])
         max_num["{}__{}".format(str(one["category_id"]),str(one["image_id"]))] += 1
+        pbar.update()
     sorted(category_ids)
     sorted(image_ids)
     category_ids = list(category_ids)
     image_ids = list(image_ids)
     global index
     index = np.zeros((len(category_ids), len(image_ids),max((v for k,v in max_num.items()))))
+    pbar = pyprind.ProgBar(len(li), monitor=True, title="mapping bbox index according to category_id and image_id")
     for i,one in enumerate(li):
         x = utils.sort_list_search_int(category_ids,one["category_id"])
         y = utils.sort_list_search_int(image_ids,one["image_id"])
@@ -537,20 +541,25 @@ def list_json_to_bbox_list2(li):
                 break
         one["bbox"].append(one["score"])
         tem[one["image_id"]][one["category_id"]].append(one["bbox"])
+        pbar.update()
+    pbar = pyprind.ProgBar(len(li), monitor=True, title="sort list by category_id and image_id")
     for k,v in tem.items():
         tem1 = []
         for category_id in category_ids:
             tem1.append([category_id,np.array(v.get(category_id,[])).astype(np.float32).reshape(-1,len(category_ids))])
         tmp.append([k,list(map(lambda x:x[1],sorted(tem1,key=lambda x:x[0])))])
+        pbar.update()
     return list(map(lambda x:x[1],sorted(tmp,key=lambda x:x[0])))
 
 def iou_insert_results(li,ious):
     global index
+    pbar = pyprind.ProgBar(ious.shape[0], monitor=True, title="iou insert into list")
     for i,category_li in enumerate(ious):
         for j,image_li in enumerate(category_li):
             for k,one in enumerate(image_li):
                 pos = int(index[i, j, k])
                 li[pos]["iou"] = float(one)
+        pbar.update()
     for one in li:
         if "iou" not in one:
             raise Exception("missing one iou")
@@ -662,7 +671,12 @@ def pkl_to_list_json(path):
 
 def coco_to_annotation(coco_anno_path,length):
     img_infos, cat2label, coco = load_annotations(coco_anno_path)
-    return [get_ann_info(i, coco, img_infos, cat2label) for i in range(length)]
+    annotations = []
+    pbar = pyprind.ProgBar(length, monitor=True, title="coco to annotation")
+    for i in range(length):
+        annotations.append(get_ann_info(i, coco, img_infos, cat2label))
+        pbar.update()
+    return annotations
 
 if __name__ == '__main__':
     with open("/data/imagenet/RPC_dataset/rpc_test_result/bbox_results.json") as f:

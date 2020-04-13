@@ -5,7 +5,7 @@ import pyprind
 import re
 import shutil
 import glob
-
+import pyprind
 
 def check_path_exist(path):
     if not os.path.exists(path):
