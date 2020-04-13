@@ -636,7 +636,8 @@ class CocoDataset(object):
             for id, i in enumerate(one[0]):
                 for j in i:
                     d = j.tolist()
-                    c.append({"bbox": d[:4], "score": d[4], "image_id": self.img_ids[index], "category_id": self.cat_ids[id]})
+                    x1,y1,x2,y2 = d[:4]
+                    c.append({"bbox": [x1,y1,x2-x1,y2-y1], "score": d[4], "image_id": self.img_ids[index], "category_id": self.cat_ids[id]})
         return c
 
     def coco_to_annotation(self,length):
@@ -666,8 +667,8 @@ class CocoDataset(object):
                 if l==0:
                     index[x,y,j] = i
                     break
-            one["bbox"].append(one["score"])
-            tem[one["image_id"]][one["category_id"]].append(one["bbox"])
+            x_value,y_value,w,h = one["bbox"]
+            tem[one["image_id"]][one["category_id"]].append([x_value,y_value,w+x_value,h+y_value,one["score"]])
             pbar.update()
         pbar = pyprind.ProgBar(len(tem), monitor=True, title="sort list by category_id and image_id")
         for k,v in tem.items():
