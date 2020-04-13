@@ -300,6 +300,7 @@ def eval_map(det_results,
     pool = Pool(nproc)
     eval_results = []
     det_iou = []
+    print("starting calculate ious for iou_thr={}.............".format(str(iou_thr)))
     for i in range(num_classes):
         # get gt and det bboxes of this class
         cls_dets, cls_gts, cls_gts_ignore = get_cls_results(
@@ -372,7 +373,7 @@ def eval_map(det_results,
             if cls_result['num_gts'] > 0:
                 aps.append(cls_result['ap'])
         mean_ap = np.array(aps).mean().item() if aps else 0.0
-
+    print("done calculate ious for iou_thr={}.............".format(str(iou_thr)))
     outdata = print_map_summary(
         mean_ap, eval_results, dataset, area_ranges, logger=logger)
 
