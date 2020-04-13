@@ -242,6 +242,23 @@ def auto_upload_dataset(anno_path, image_path, project_id, dataset_id, user_id, 
         else:
             raise Exception("current support suffix : txt xml json")
 
+def upload_map_file_from_det_list_gt_coco(map_file_path,project_id, dataset_id,verbose=True):
+    utils.check_path_exist(map_file_path)
+    utils.scp(config["identity_file"], map_file_path, config["nfs_base_path"], config["user"], config["host"],
+              verbose=verbose)
+    target_json_base_path = os.path.join(config["nfs_base_path"], "label/private/tasks", dataset_id, project_id)
+    cmd = ""
+    cmd += "rm -rf " + os.path.join(target_json_base_path, "map.json") + ";"
+    cmd += "mkdir -p " + target_json_base_path + ";"
+    cmd += "mv %s %s" % (os.path.join(config["nfs_base_path"], "map.json"), target_json_base_path) + ";"
+    utils.SSH_exec_cmd_with_output(config["identity_file"], config["user"], config["host"], cmd, verbose=verbose)
+
+def upload_map_file(det_anno_path, gt_anno_path,project_id, dataset_id, verbose=True,args=None):
+    out_json_path = os.path.join("./", "template_for_convert")
+    utils.remove_directiry(out_json_path)
+    label_tool.calculate_dataset_map_by_list(det_anno_path,gt_anno_path,out_json_path)
+    with cd(out_json_path):
+        upload_map_file_from_det_list_gt_coco("map.json", project_id, dataset_id, verbose)
 
 def run_command(args, command, nargs, parser):
     if command == "upload_dataset":
@@ -312,7 +329,12 @@ def run_command(args, command, nargs, parser):
             print("upload-dataset [anno_path] [image_path] [project_id] [dataset_id] [uid]")
         else:
             auto_upload_dataset(nargs[0], nargs[1], nargs[2], nargs[3], nargs[4], args.verbose, args.ignore_image, args)
-
+    elif command == "upload-map-file":
+        if len(nargs) != 5:
+            parser.print_help()
+            print("upload-map-file [det_anno_path] [gt_anno_path] [project_id] [dataset_id]")
+        else:
+            upload_map_file(nargs[0], nargs[1], nargs[2], nargs[3],args.verbose,args)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='upload.py',
