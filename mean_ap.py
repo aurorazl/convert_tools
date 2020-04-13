@@ -494,12 +494,12 @@ def print_map_summary(mean_ap,
             for j in range(num_classes):
                 one_map = {}
                 row_data = [
-                    label_names[j], int(num_gts[index,i, j]), int(results[j]['num_dets']),
+                    label_names[j], int(num_gts[index,i, j]), int(results[one_thr][j]['num_dets']),
                     '{:.3f}'.format(float(recalls[index,i, j])), '{:.3f}'.format(float(aps[index,i, j]))
                 ]
                 one_map["category"] = label_names[j]
                 one_map["gt_nums"] = int(num_gts[index,i, j])
-                one_map["det_nums"] = int(results[j]['num_dets'])
+                one_map["det_nums"] = int(results[one_thr][j]['num_dets'])
                 one_map["recall"] = float(recalls[index,i, j])
                 one_map["ap"] = float(aps[index,i, j])
                 table_data.append(row_data)
