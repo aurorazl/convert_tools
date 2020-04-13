@@ -188,3 +188,24 @@ def check_anno_image_number(voc_anno_path,voc_image_path,args):
     image_list = glob.glob(os.path.join(voc_image_path,"*.{}".format(args.image_before_suffix)))
     if(len(anno_list)!=len(image_list)):
         raise Exception("anno number not equal image number")
+
+def sort_list_search_int(li, val):
+    low = 0
+    high = len(li)-1
+    count = 0
+    while low <= high:
+        count +=1
+        mid = (low + high) // 2
+        # print("mid",mid,li[mid])
+        if li[mid] > val:
+            high = mid - 1
+            # print("high",high)
+        elif li[mid] < val:
+            low = mid + 1
+            # print("low",low)
+        else:
+            print(count)
+            return mid
+    else:
+        print(count)
+        return None

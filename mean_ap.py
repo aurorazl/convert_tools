@@ -6,6 +6,7 @@ from class_names import get_classes
 from pycocotools.coco import COCO
 import json
 import collections
+import utils
 
 def average_precision(recalls, precisions, mode='area'):
     """Calculate average precision (for single or multiple scales).
@@ -526,9 +527,11 @@ def list_json_to_bbox_list2(li):
     global index
     index = np.zeros((len(category_ids), len(image_ids),max((v for k,v in max_num.items()))))
     for i,one in enumerate(li):
-        for j,l in enumerate(index[one["category_id"],one["image_id"]]):
+        x = utils.sort_list_search_int(category_ids,one["category_id"])
+        y = utils.sort_list_search_int(image_ids,one["image_id"])
+        for j,l in enumerate(index[x,y]):
             if l==0:
-                index[one["category_id"], one["image_id"],j] = i
+                index[x,y,j] = i
                 break
         one["bbox"].append(one["score"])
         tem[one["image_id"]][one["category_id"]].append(one["bbox"])
