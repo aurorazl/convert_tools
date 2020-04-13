@@ -879,7 +879,7 @@ def module_predict_segmentation_list_to_json(list_file_path,json_path,base_categ
             json_dict[one["image_id"]]["images"] = [{"file_name":str(one["image_id"])+".jpg","id":one["image_id"],"height":one["segmentation"]["size"][1],"width":one["segmentation"]["size"][0]}]
             anno_dict = {"segmentation":compress_rle_to_polygon(one["segmentation"]),"area":int(mask.area(one["segmentation"])),"iscrowd":0,
                                                               "image_id":one["image_id"],"bbox":one["bbox"],
-                                                              "category_id":int(one["category_id"],int(one["category_id"])),
+                                                              "category_id":int(one["category_id"]),
                                                               "id":one["image_id"]
                                                               }
         else:
