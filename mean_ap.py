@@ -203,7 +203,7 @@ def tpfp_default(det_bboxes,
     sort_inds = np.argsort(-det_bboxes[:, -1])
 
     for k, (min_area, max_area) in enumerate(area_ranges):
-        gt_covered = np.zeros(num_gts, dtype=bool)
+        gt_covered = np.zeros((thr_nums,num_gts), dtype=bool)
         # if no area range is specified, gt_area_ignore is all False
         if min_area is None:
             gt_area_ignore = np.zeros_like(gt_ignore_inds, dtype=bool)
@@ -217,8 +217,8 @@ def tpfp_default(det_bboxes,
                     matched_gt = ious_argmax[i]
                     if not (gt_ignore_inds[matched_gt]
                             or gt_area_ignore[matched_gt]):
-                        if not gt_covered[matched_gt]:
-                            gt_covered[matched_gt] = True
+                        if not gt_covered[thr_index][matched_gt]:
+                            gt_covered[thr_index][matched_gt] = True
                             tp[thr_index,k, i] = 1
                         else:
                             fp[thr_index,k, i] = 1
