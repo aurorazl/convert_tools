@@ -935,7 +935,7 @@ def calculate_dataset_map_by_list(list_file_path,coco_anno_path,out_path,new_lis
     dataset = CocoDataset()
     dataset.load_annotations(coco_anno_path)
     bbox_results = dataset.list_json_to_bbox_list2(results)
-    annotations = dataset.coco_to_annotation(len(bbox_results))
+    annotations = dataset.coco_to_annotation()
     iou_thrs = list(map(lambda x:x*0.1,list(range(1,10,1))))
     _, out,ious = mean_ap.eval_map(bbox_results, annotations,iou_thr=iou_thrs)
     mean_ap.iou_insert_results(results, ious)

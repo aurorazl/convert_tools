@@ -333,6 +333,8 @@ def run_command(args, command, nargs, parser):
             print("upload-map-file [det_anno_path] [gt_anno_path] [new_list_file_dir] [project_id] [dataset_id]")
         else:
             upload_map_file(nargs[0], nargs[1], nargs[2], nargs[3],nargs[4],args.verbose,args)
+    else:
+        parser.print_help()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='upload.py',

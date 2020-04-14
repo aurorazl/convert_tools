@@ -291,7 +291,7 @@ def eval_map(det_results,
     Returns:
         tuple: (mAP, [dict, dict, ...])
     """
-    assert len(det_results) == len(annotations)
+    assert len(det_results)==len(annotations)
     iou_thr = iou_thr if isinstance(iou_thr,list) else [iou_thr]
     num_imgs = len(det_results)
     num_scales = len(scale_ranges) if scale_ranges is not None else 1
@@ -531,22 +531,6 @@ def list_json_to_bbox_list(li):
         """return : [ [cls1_det,cls2_det ...], ...]."""
     return list(map(lambda x:x[1],sorted(tmp,key=lambda x:x[0])))
 
-index = None
-
-
-def iou_insert_results(li,ious):
-    global index
-    pbar = pyprind.ProgBar(len(ious), monitor=True, title="iou insert into list")
-    for i,category_li in enumerate(ious):
-        for j,image_li in enumerate(category_li):
-            for k,one in enumerate(image_li):
-                pos = int(index[i, j, k])
-                li[pos]["iou"] = float(one)
-        pbar.update()
-    for one in li:
-        if "iou" not in one:
-            raise Exception("missing one iou")
-
 def _det2list(results):
     bbox_results = []
     for idx in range(len(results)):
@@ -649,8 +633,9 @@ class CocoDataset(object):
                     c.append({"bbox": [x1,y1,x2-x1,y2-y1], "score": d[4], "image_id": self.img_ids[index], "category_id": self.cat_ids[id]})
         return c
 
-    def coco_to_annotation(self,length):
+    def coco_to_annotation(self):
         annotations = []
+        length = len(self.img_ids)
         pbar = pyprind.ProgBar(length, monitor=True, title="coco to annotation")
         for i in range(length):
             annotations.append(self.get_ann_info(i))
@@ -668,10 +653,13 @@ class CocoDataset(object):
         global index
         index = np.zeros((len(self.cat_ids), len(self.img_ids),max((v for k,v in max_num.items()))))
         pbar = pyprind.ProgBar(len(li), monitor=True, title="mapping bbox index according to category_id and image_id")
-        for i,one in enumerate(li):
+        all_img_ids = set(self.img_ids)
+        for i,one in enumerate(li,1):
             x = utils.sort_list_search_int(self.cat_ids,one["category_id"])
             # y = utils.sort_list_search_int(image_ids,one["image_id"])
             y = self.img_ids.index(one["image_id"])
+            if one["image_id"] in all_img_ids:
+                all_img_ids.remove(one["image_id"])
             for j,l in enumerate(index[x,y]):
                 if l==0:
                     index[x,y,j] = i
@@ -680,6 +668,8 @@ class CocoDataset(object):
             tem[one["image_id"]][one["category_id"]].append([x_value,y_value,w+x_value,h+y_value,one["score"]])
             pbar.update()
         pbar = pyprind.ProgBar(len(tem), monitor=True, title="sort list by category_id and image_id")
+        for i in all_img_ids:
+            tem[i] = {}
         for k,v in tem.items():
             tem1 = []
             for category_id in self.cat_ids:
@@ -687,6 +677,20 @@ class CocoDataset(object):
             tmp.append([k,list(map(lambda x:x[1],sorted(tem1,key=lambda x:x[0])))])
             pbar.update()
         return list(map(lambda x:x[1],sorted(tmp,key=lambda x:self.img_ids.index(x[0]))))
+
+index = None
+def iou_insert_results(li,ious):
+    global index
+    pbar = pyprind.ProgBar(len(ious), monitor=True, title="iou insert into list")
+    for i,category_li in enumerate(ious):
+        for j,image_li in enumerate(category_li):
+            for k,one in enumerate(image_li):
+                pos = int(index[i, j, k])-1
+                li[pos]["iou"] = float(one)
+        pbar.update()
+    for one in li:
+        if "iou" not in one:
+            raise Exception("missing one iou")
 
 def list_json_to_anno_list(li):
     tmp=[]
