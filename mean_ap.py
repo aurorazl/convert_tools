@@ -363,10 +363,10 @@ def eval_map(det_results,
             })
     if scale_ranges is not None:
         # shape (num_classes, num_scales)
-        for index,thr in enumerate(iou_thr):
-            all_ap = np.vstack([cls_result['ap'] for cls_result in eval_results[index]])
+        for thr in iou_thr:
+            all_ap = np.vstack([cls_result['ap'] for cls_result in eval_results[thr]])
             all_num_gts = np.vstack(
-                [cls_result['num_gts'] for cls_result in eval_results[index]])
+                [cls_result['num_gts'] for cls_result in eval_results[thr]])
             mean_ap = collections.defaultdict(lambda :[])
             for i in range(num_scales):
                 if np.any(all_num_gts[:, i] > 0):
@@ -375,9 +375,9 @@ def eval_map(det_results,
                     mean_ap[thr].append(0.0)
     else:
         mean_ap = collections.defaultdict(lambda :[])
-        for index, thr in enumerate(iou_thr):
+        for thr in iou_thr:
             aps = []
-            for cls_result in eval_results[index]:
+            for cls_result in eval_results[thr]:
                 if cls_result['num_gts'] > 0:
                     aps.append(cls_result['ap'])
             mean_ap[thr] = np.array(aps).mean().item() if aps else 0.0
