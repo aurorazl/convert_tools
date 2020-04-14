@@ -959,10 +959,10 @@ def cal_iou_and_insert_results_for_list(list_file_path,coco_anno_path,new_list_f
         f.write(json.dumps(results, indent=4, separators=(',', ':')))
 
 def generate_task_iou_file(segmentation_list,out_path):
-    task_info = collections.defaultdict(lambda :[])
+    task_info = collections.defaultdict(lambda :{"iou":[]})
     for one in segmentation_list:
         if "iou" in one:
-            task_info[one["image_id"]].append(one["iou"])
+            task_info[one["image_id"]]["iou"].append(one["iou"])
     with open(os.path.join(out_path, "iou.json"), "w+") as f:
         f.write(json.dumps(task_info, indent=4, separators=(',', ':')))
 
