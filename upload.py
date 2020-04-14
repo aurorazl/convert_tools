@@ -237,15 +237,17 @@ def auto_upload_dataset(anno_path, image_path, project_id, dataset_id, user_id, 
             print("uploading json dataset")
             upload_dataset(image_path, anno_path, project_id, dataset_id, verbose, ignore_image)
 
-def upload_map_file_from_det_list_gt_coco(map_file_path,project_id, dataset_id,verbose=True):
-    utils.check_path_exist(map_file_path)
-    utils.scp(config["identity_file"], map_file_path, config["nfs_base_path"], config["user"], config["host"],
-              verbose=verbose)
+def upload_map_file_from_det_list_gt_coco(project_id, dataset_id,verbose=True):
+    utils.check_path_exist("map.json")
+    utils.scp(config["identity_file"], "map.json", config["nfs_base_path"], config["user"], config["host"],verbose=verbose)
+    utils.scp(config["identity_file"], "iou.json", config["nfs_base_path"], config["user"], config["host"],verbose=verbose)
     target_json_base_path = os.path.join(config["nfs_base_path"], "label/private/tasks", dataset_id, project_id)
     cmd = ""
     cmd += "rm -rf " + os.path.join(target_json_base_path, "map.json") + ";"
+    cmd += "rm -rf " + os.path.join(target_json_base_path, "iou.json") + ";"
     cmd += "mkdir -p " + target_json_base_path + ";"
     cmd += "mv %s %s" % (os.path.join(config["nfs_base_path"], "map.json"), target_json_base_path) + ";"
+    cmd += "mv %s %s" % (os.path.join(config["nfs_base_path"], "iou.json"), target_json_base_path) + ";"
     utils.SSH_exec_cmd_with_output(config["identity_file"], config["user"], config["host"], cmd, verbose=verbose)
 
 def upload_map_file(det_anno_path, gt_anno_path,new_list_file_dir,project_id, dataset_id, verbose=True,args=None):
@@ -254,7 +256,7 @@ def upload_map_file(det_anno_path, gt_anno_path,new_list_file_dir,project_id, da
     os.system("mkdir %s" % out_json_path)
     label_tool.calculate_dataset_map_by_list(det_anno_path,gt_anno_path,out_json_path,new_list_file_dir)
     with cd(out_json_path):
-        upload_map_file_from_det_list_gt_coco("map.json", project_id, dataset_id, verbose)
+        upload_map_file_from_det_list_gt_coco(project_id, dataset_id, verbose)
 
 def run_command(args, command, nargs, parser):
     if command == "upload_dataset":

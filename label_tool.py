@@ -941,6 +941,7 @@ def calculate_dataset_map_by_list(list_file_path,coco_anno_path,out_path,new_lis
     mean_ap.iou_insert_results(results, ious)
     with open(os.path.join(new_list_file_dir,"new_list.json"),"w+") as f:
         f.write(json.dumps(results, indent=4, separators=(',', ':')))
+    generate_task_iou_file(results,out_path)
     result = {"map":out}
     with open(os.path.join(out_path,"map.json"),"w+") as f:
         f.write(json.dumps(result, indent=4, separators=(',', ':')))
@@ -956,6 +957,14 @@ def cal_iou_and_insert_results_for_list(list_file_path,coco_anno_path,new_list_f
     mean_ap.iou_insert_results(results, ious)
     with open(os.path.join(new_list_file_dir,"new_list.json"),"w+") as f:
         f.write(json.dumps(results, indent=4, separators=(',', ':')))
+
+def generate_task_iou_file(segmentation_list,out_path):
+    task_info = collections.defaultdict(lambda :[])
+    for one in segmentation_list:
+        if "iou" in one:
+            task_info[one["image_id"]].append(one["iou"])
+    with open(os.path.join(out_path, "iou.json"), "w+") as f:
+        f.write(json.dumps(task_info, indent=4, separators=(',', ':')))
 
 def merge_ocr_to_json(ocr_anno_path,ocr_image_path,json_path,prefix="",args=None):
     args.anno_before_prefix = "gt_img_" if not args.anno_before_prefix else args.anno_before_prefix
