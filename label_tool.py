@@ -929,7 +929,7 @@ def calculate_dataset_map_by_pkl(pkl_file_path,coco_anno_path,out_path):
     with open(os.path.join(out_path, "map.json"), "w") as f:
         f.write(json.dumps(result, indent=4, separators=(',', ':')))
 
-def calculate_dataset_map_by_list(list_file_path,coco_anno_path,out_path):
+def calculate_dataset_map_by_list(list_file_path,coco_anno_path,out_path,new_list_file_dir):
     with open(list_file_path, "rb") as f:
         results = json.load(f)
     dataset = CocoDataset()
@@ -939,7 +939,7 @@ def calculate_dataset_map_by_list(list_file_path,coco_anno_path,out_path):
     iou_thrs = list(map(lambda x:x*0.1,list(range(1,10,1))))
     _, out,ious = mean_ap.eval_map(bbox_results, annotations,iou_thr=iou_thrs)
     mean_ap.iou_insert_results(results, ious)
-    with open(os.path.join(out_path,"new_list.json"),"w+") as f:
+    with open(os.path.join(new_list_file_dir,"new_list.json"),"w+") as f:
         f.write(json.dumps(results, indent=4, separators=(',', ':')))
     result = {"map":out}
     with open(os.path.join(out_path,"map.json"),"w+") as f:
@@ -1257,11 +1257,11 @@ def run_command(args, command, nargs, parser):
         else:
             find_json_dataset_category_ids(nargs[0],nargs[1])
     elif command == "calculate_dataset_map_by_list":
-        if len(nargs)!=3:
+        if len(nargs)!=4:
             parser.print_help()
-            print("\n calculate_dataset_map_by_list [list_file_path] [coco_anno_path] [out_path] \n")
+            print("\n calculate_dataset_map_by_list [list_file_path] [coco_anno_path] [out_path] [new_list_file_dir]\n")
         else:
-            calculate_dataset_map_by_list(nargs[0],nargs[1],nargs[2])
+            calculate_dataset_map_by_list(nargs[0],nargs[1],nargs[2],nargs[3])
     elif command == "cal_iou_and_insert_results_for_list":
         if len(nargs)!=3:
             parser.print_help()
