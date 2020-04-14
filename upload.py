@@ -252,7 +252,7 @@ def upload_map_file(det_anno_path, gt_anno_path,project_id, dataset_id, verbose=
     out_json_path = os.path.join("./", "template_for_convert")
     utils.remove_directiry(out_json_path)
     os.system("mkdir %s" % out_json_path)
-    label_tool.calculate_dataset_map_by_list(det_anno_path,gt_anno_path,out_json_path)
+    label_tool.calculate_dataset_map_by_list(det_anno_path,gt_anno_path,out_json_path,new_list_file_dir)
     with cd(out_json_path):
         upload_map_file_from_det_list_gt_coco("map.json", project_id, dataset_id, verbose)
 

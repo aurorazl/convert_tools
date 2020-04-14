@@ -939,13 +939,13 @@ def calculate_dataset_map_by_list(list_file_path,coco_anno_path,out_path):
     iou_thrs = list(map(lambda x:x*0.1,list(range(1,10,1))))
     _, out,ious = mean_ap.eval_map(bbox_results, annotations,iou_thr=iou_thrs)
     mean_ap.iou_insert_results(results, ious)
-    with open(list_file_path,"w") as f:
+    with open(os.path.join(out_path,"new_list.json"),"w+") as f:
         f.write(json.dumps(results, indent=4, separators=(',', ':')))
     result = {"map":out}
-    with open(os.path.join(out_path,"map.json"),"w") as f:
+    with open(os.path.join(out_path,"map.json"),"w+") as f:
         f.write(json.dumps(result, indent=4, separators=(',', ':')))
 
-def cal_iou_and_insert_results_for_list(list_file_path,coco_anno_path):
+def cal_iou_and_insert_results_for_list(list_file_path,coco_anno_path,new_list_file_dir):
     with open(list_file_path, "rb") as f:
         results = json.load(f)
     dataset = CocoDataset()
@@ -954,7 +954,7 @@ def cal_iou_and_insert_results_for_list(list_file_path,coco_anno_path):
     annotations = dataset.coco_to_annotation(len(bbox_results))
     _, out, ious = mean_ap.eval_map(bbox_results, annotations)
     mean_ap.iou_insert_results(results, ious)
-    with open(list_file_path,"w") as f:
+    with open(os.path.join(new_list_file_dir,"new_list.json"),"w+") as f:
         f.write(json.dumps(results, indent=4, separators=(',', ':')))
 
 def merge_ocr_to_json(ocr_anno_path,ocr_image_path,json_path,prefix="",args=None):
@@ -1263,11 +1263,11 @@ def run_command(args, command, nargs, parser):
         else:
             calculate_dataset_map_by_list(nargs[0],nargs[1],nargs[2])
     elif command == "cal_iou_and_insert_results_for_list":
-        if len(nargs)!=2:
+        if len(nargs)!=3:
             parser.print_help()
-            print("\n cal_iou_and_insert_results_for_list [list_file_path] [coco_anno_path]\n")
+            print("\n cal_iou_and_insert_results_for_list [list_file_path] [coco_anno_path] [new_list_file_dir]\n")
         else:
-            cal_iou_and_insert_results_for_list(nargs[0],nargs[1])
+            cal_iou_and_insert_results_for_list(nargs[0],nargs[1],nargs[2])
     else:
         parser.print_help()
 
