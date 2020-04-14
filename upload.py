@@ -248,7 +248,7 @@ def upload_map_file_from_det_list_gt_coco(map_file_path,project_id, dataset_id,v
     cmd += "mv %s %s" % (os.path.join(config["nfs_base_path"], "map.json"), target_json_base_path) + ";"
     utils.SSH_exec_cmd_with_output(config["identity_file"], config["user"], config["host"], cmd, verbose=verbose)
 
-def upload_map_file(det_anno_path, gt_anno_path,project_id, dataset_id, verbose=True,args=None):
+def upload_map_file(det_anno_path, gt_anno_path,new_list_file_dir,project_id, dataset_id, verbose=True,args=None):
     out_json_path = os.path.join("./", "template_for_convert")
     utils.remove_directiry(out_json_path)
     os.system("mkdir %s" % out_json_path)
@@ -326,11 +326,11 @@ def run_command(args, command, nargs, parser):
         else:
             auto_upload_dataset(nargs[0], nargs[1], nargs[2], nargs[3], nargs[4], args.verbose, args.ignore_image, args)
     elif command == "upload-map-file":
-        if len(nargs) != 4:
+        if len(nargs) != 5:
             parser.print_help()
-            print("upload-map-file [det_anno_path] [gt_anno_path] [project_id] [dataset_id]")
+            print("upload-map-file [det_anno_path] [gt_anno_path] [new_list_file_dir] [project_id] [dataset_id]")
         else:
-            upload_map_file(nargs[0], nargs[1], nargs[2], nargs[3],args.verbose,args)
+            upload_map_file(nargs[0], nargs[1], nargs[2], nargs[3],nargs[4],args.verbose,args)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='upload.py',
