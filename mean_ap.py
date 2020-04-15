@@ -500,8 +500,8 @@ def print_map_summary(mean_ap,
                 one_map["category"] = label_names[j]
                 one_map["gt_nums"] = int(num_gts[index,i, j])
                 one_map["det_nums"] = int(results[one_thr][j]['num_dets'])
-                one_map["recall"] = float(recalls[index,i, j])
-                one_map["ap"] = float(aps[index,i, j])
+                one_map["recall"] = '{:.3f}'.format(float(recalls[index,i, j]))
+                one_map["ap"] = '{:.3f}'.format(float(aps[index,i, j]))
                 table_data.append(row_data)
                 MAP.append(one_map)
                 outdata.append(row_data)
@@ -509,7 +509,7 @@ def print_map_summary(mean_ap,
             table = AsciiTable(table_data)
             table.inner_footing_row_border = True
             print('\n' + table.table)
-        TOTAL_MAP.append({"iouThr":one_thr,"data":MAP})
+        TOTAL_MAP.append({"iouThr":one_thr,"data":MAP,"mean_ap":'{:.3f}'.format(mean_ap[one_thr][i])})
     return TOTAL_MAP
 
 def list_json_to_bbox_list(li):

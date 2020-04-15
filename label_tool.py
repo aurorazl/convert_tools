@@ -923,7 +923,7 @@ def calculate_dataset_map_by_pkl(pkl_file_path,coco_anno_path,out_path):
     results = dataset.pkl_to_list_json(pkl_file_path)
     bbox_results = dataset.list_json_to_bbox_list2(results)
     annotations = dataset.coco_to_annotation(len(bbox_results))
-    iou_thrs =list(map(lambda x:x*0.1,list(range(1,10,1))))
+    iou_thrs = [0.5,0.6,0.7,0.8,0.9]
     out, ious = mean_ap.eval_map(bbox_results, annotations, iou_thr=iou_thrs)
     result = {"map": ious}
     with open(os.path.join(out_path, "map.json"), "w") as f:
@@ -936,7 +936,7 @@ def calculate_dataset_map_by_list(list_file_path,coco_anno_path,out_path,new_lis
     dataset.load_annotations(coco_anno_path)
     bbox_results = dataset.list_json_to_bbox_list2(results)
     annotations = dataset.coco_to_annotation()
-    iou_thrs = list(map(lambda x:x*0.1,list(range(1,10,1))))
+    iou_thrs = [0.5,0.6,0.7,0.8,0.9]
     _, out,ious = mean_ap.eval_map(bbox_results, annotations,iou_thr=iou_thrs)
     mean_ap.iou_insert_results(results, ious)
     with open(os.path.join(new_list_file_dir,"new_list.json"),"w+") as f:
