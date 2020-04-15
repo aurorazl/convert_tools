@@ -920,7 +920,7 @@ def merge_json_to_list(json_path,out_list_file_path):
             final_list.append({"image_id":ImgID,"bbox":[one["bbox"]],"category_id":one["category_id"]})
         pbar.update()
     with open(out_list_file_path, "w") as f:
-        f.write(json.dumps(coco, indent=4, separators=(',', ':')))
+        f.write(json.dumps(final_list, indent=4, separators=(',', ':')))
 
 def generate_image_id_list_for_new_datasets(image_path,out_path):
     src_list = os.listdir(image_path)
