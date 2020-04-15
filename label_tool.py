@@ -407,7 +407,7 @@ def merge_json_to_coco_dataset(json_path,coco_file_path,coco_image_path,prefix="
     categories = {}
     for ImgID in ImgIDs:
         if not prefix and max_num==0:
-            new_image_id = str(ImgID)
+            new_image_id = ImgID
         else:
             max_num += 1
             new_image_id = prefix + str(max_num)
@@ -922,7 +922,7 @@ def merge_json_to_list(json_path,out_list_file_path):
         with open(os.path.join(json_anno_path, "{}.json".format(ImgID)), "r") as f:
             json_dict = json.load(f)
         for one in json_dict["annotations"]:
-            final_list.append({"image_id":str(ImgID),"bbox":one["bbox"],"category_id":one["category_id"],"score":one["score"] if "score" in one else 0.9})
+            final_list.append({"image_id":ImgID,"bbox":one["bbox"],"category_id":one["category_id"],"score":one["score"] if "score" in one else 0.9})
         pbar.update()
     with open(out_list_file_path, "w") as f:
         f.write(json.dumps(final_list, indent=4, separators=(',', ':')))
