@@ -657,7 +657,10 @@ class CocoDataset(object):
         for i,one in enumerate(li,1):
             x = utils.sort_list_search_int(self.cat_ids,one["category_id"])
             # y = utils.sort_list_search_int(image_ids,one["image_id"])
-            y = self.img_ids.index(one["image_id"])
+            try:
+                y = self.img_ids.fin(one["image_id"])
+            except ValueError:
+                y = self.img_ids.fin(int(one["image_id"]))
             if one["image_id"] in all_img_ids:
                 all_img_ids.remove(one["image_id"])
             for j,l in enumerate(index[x,y]):
