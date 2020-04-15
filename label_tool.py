@@ -917,7 +917,7 @@ def merge_json_to_list(json_path,out_list_file_path):
         with open(os.path.join(json_anno_path, "{}.json".format(ImgID)), "r") as f:
             json_dict = json.load(f)
         for one in json_dict["annotations"]:
-            final_list.append({"image_id":str(ImgID),"bbox":one["bbox"],"category_id":one["category_id"]})
+            final_list.append({"image_id":str(ImgID),"bbox":one["bbox"],"category_id":one["category_id"],"score":one["score"] if "score" in one else 0.9})
         pbar.update()
     with open(out_list_file_path, "w") as f:
         f.write(json.dumps(final_list, indent=4, separators=(',', ':')))
