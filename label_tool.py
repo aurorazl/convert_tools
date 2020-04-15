@@ -72,8 +72,8 @@ def get_class_number(name):
     #         number = int(one.get("id",0))
     global class_dict,max_index
     if name not in class_dict:
-        class_dict[name] = max_index
         max_index += 1
+        class_dict[name] = max_index
         return max_index
     return class_dict[name]
 
