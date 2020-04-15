@@ -167,75 +167,34 @@ def upload_model_predict_result_from_ocr(ocr_anno_path, ocr_image_path, project_
 
 
 def auto_upload_model_predict_result(anno_path, image_path, project_id, dataset_id, verbose=True, args=None):
-    utils.check_path_exist(anno_path)
-    utils.check_path_exist(image_path)
-    if utils.path_is_file(anno_path):
-        file_type = os.path.splitext(anno_path)[1]
-        if file_type == ".json":
-            with open(anno_path, "r") as f:
-                di = json.load(f)
-            assert type(di)==dict or type(di)==list
-            if isinstance(di, dict):
-                print("uploading coco annotation file")
-                upload_model_predict_result_from_coco(anno_path, project_id, dataset_id, verbose, args)
-            elif isinstance(di, list):
-                print("uploading list annotation file")
-                upload_model_predict_result_from_list(anno_path, project_id, dataset_id, verbose, args)
-        else:
-            raise Exception("Only json suffix supported.")
+    dataset_type = utils.find_dataset_type(anno_path,image_path)
+    if dataset_type=="coco":
+        upload_model_predict_result_from_coco(anno_path, project_id, dataset_id, verbose, args)
+    elif dataset_type=="list":
+        upload_model_predict_result_from_list(anno_path, project_id, dataset_id, verbose, args)
+    elif dataset_type == "voc":
+        upload_model_predict_result_from_voc(anno_path, image_path, project_id, dataset_id, verbose, args)
+    elif dataset_type == "ocr":
+        upload_model_predict_result_from_ocr(anno_path, image_path, project_id, dataset_id, verbose, args)
+    elif dataset_type == "json":
+        upload_model_predict_result(anno_path, project_id, dataset_id, verbose)
     else:
-        src_list = os.listdir(anno_path)
-        first_file = src_list[0]
-        file_type = os.path.splitext(first_file)[1]
-        assert file_type in [".xml", ".txt", ".json"]
-        if file_type == ".xml":
-            print("uploading voc annotation file")
-            upload_model_predict_result_from_voc(anno_path, image_path, project_id, dataset_id, verbose, args)
-        elif file_type == ".txt":
-            print("uploading ocr annotation file")
-            upload_model_predict_result_from_ocr(anno_path, image_path, project_id, dataset_id, verbose, args)
-        elif file_type == ".json":
-            print("uploading json annotation file")
-            upload_model_predict_result(anno_path, project_id, dataset_id, verbose)
-
+        raise Exception("not support dataset type")
 
 def auto_upload_dataset(anno_path, image_path, project_id, dataset_id, user_id, verbose=False, ignore_image=False,
                         args=None):
-    utils.check_path_exist(anno_path)
-    utils.check_path_exist(image_path)
-    if utils.path_is_file(anno_path):
-        file_type = os.path.splitext(anno_path)[1]
-        if file_type == ".json":
-            with open(anno_path, "r") as f:
-                di = json.load(f)
-            assert type(di)==dict
-            print("uploading coco dataset")
-            upload_dataset_from_coco(anno_path, image_path, project_id, dataset_id, user_id, verbose, ignore_image,
-                                     args)
-        else:
-            raise Exception("Only json suffix supported.")
+    dataset_type = utils.find_dataset_type(anno_path,image_path)
+    if dataset_type=="coco":
+        upload_dataset_from_coco(anno_path, image_path, project_id, dataset_id, user_id, verbose, ignore_image,args)
+    elif dataset_type == "voc":
+        path = os.path.dirname(anno_path)
+        upload_dataset_from_voc(path, project_id, dataset_id, user_id, verbose, ignore_image, args)
+    elif dataset_type == "ocr":
+        upload_dataset_from_ocr(anno_path, image_path, project_id, dataset_id, user_id, verbose, ignore_image, args)
+    elif dataset_type == "json":
+        upload_dataset(image_path, anno_path, project_id, dataset_id, verbose, ignore_image)
     else:
-        src_list = os.listdir(anno_path)
-        first_file = src_list[0]
-        file_type = os.path.splitext(first_file)[1]
-        assert file_type in [".xml",".txt",".json"]
-        if file_type == ".xml":
-            print("uploading voc dataset")
-            if anno_path.endswith("/"):
-                anno_path = os.path.dirname(anno_path)
-            if image_path.endswith("/"):
-                image_path = os.path.dirname(image_path)
-            path = os.path.dirname(anno_path)
-            path2 = os.path.dirname(image_path)
-            if (path != path2):
-                raise Exception("wrong path.anno path {} not equal with image path {}".format(path,path2))
-            upload_dataset_from_voc(path, project_id, dataset_id, user_id, verbose, ignore_image, args)
-        elif file_type == ".txt":
-            print("uploading ocr dataset")
-            upload_dataset_from_ocr(anno_path, image_path, project_id, dataset_id, user_id, verbose, ignore_image, args)
-        elif file_type == ".json":
-            print("uploading json dataset")
-            upload_dataset(image_path, anno_path, project_id, dataset_id, verbose, ignore_image)
+        raise Exception("not support dataset type")
 
 def upload_map_file_from_det_list_gt_coco(project_id, dataset_id,verbose=True):
     utils.check_path_exist("map.json")

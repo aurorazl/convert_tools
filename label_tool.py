@@ -906,6 +906,22 @@ def module_predict_segmentation_list_to_json(list_file_path,json_path,base_categ
             f.write(json.dumps(di, indent=4, separators=(',', ':')))
         pbar.update()
 
+def merge_json_to_list(json_path,out_list_file_path):
+    json_anno_path = os.path.join(json_path, "images")
+    with open(os.path.join(json_path, "list.json"), "r") as f:
+        ImgIDs = json.load(f)["ImgIDs"]
+    global pbar
+    pbar = pyprind.ProgBar(len(ImgIDs),monitor=True,title="converting json to list")
+    final_list=[]
+    for ImgID in ImgIDs:
+        with open(os.path.join(json_anno_path, "{}.json".format(ImgID)), "r") as f:
+            json_dict = json.load(f)
+        for one in json_dict["annotations"]:
+            final_list.append({"image_id":ImgID,"bbox":[one["bbox"]],"category_id":one["category_id"]})
+        pbar.update()
+    with open(out_list_file_path, "w") as f:
+        f.write(json.dumps(coco, indent=4, separators=(',', ':')))
+
 def generate_image_id_list_for_new_datasets(image_path,out_path):
     src_list = os.listdir(image_path)
     new_image_id_list = []
@@ -946,13 +962,48 @@ def calculate_dataset_map_by_list(list_file_path,coco_anno_path,out_path,new_lis
     with open(os.path.join(out_path,"map.json"),"w+") as f:
         f.write(json.dumps(result, indent=4, separators=(',', ':')))
 
+def calculate_dataset_map(det_anno_path,gt_anno_path,image_path,out_path):
+    det_dataset_type = utils.find_dataset_type(det_anno_path, image_path)
+    gt_dataset_type = utils.find_dataset_type(gt_anno_path, image_path)
+    list_path = os.path.join(out_path,"det_list.json")
+    coco_path = os.path.join(out_path,"gt_coco.json")
+    args.ignore_image = True
+    if det_dataset_type=="coco":
+        merge_coco_to_json_dataset(det_anno_path, image_path, out_path, args=args)
+        merge_json_to_list(out_path,list_path)
+    elif det_dataset_type == "voc":
+        merge_voc_dataset_to_json_dataset(det_anno_path, image_path, out_path, args=args)
+        merge_json_to_list(out_path, list_path)
+    elif det_dataset_type == "ocr":
+        merge_ocr_to_json(det_anno_path, image_path, out_path, args=args)
+        merge_json_to_list(out_path, list_path)
+    elif det_dataset_type == "json":
+        merge_json_to_list(out_path,list_path)
+    elif det_dataset_type == "list":
+        list_path = det_anno_path
+    else:
+        raise Exception("not support dataset type")
+    if gt_dataset_type=="coco":
+        coco_path = gt_anno_path
+    elif gt_dataset_type == "voc":
+        merge_voc_dataset_to_json_dataset(gt_anno_path, image_path, out_path, args=args)
+        merge_json_to_coco_dataset(out_path, coco_path,image_path,args=args)
+    elif gt_dataset_type == "ocr":
+        merge_ocr_to_json(gt_anno_path, image_path, out_path, args=args)
+        merge_json_to_coco_dataset(out_path, coco_path,image_path,args=args)
+    elif gt_dataset_type == "json":
+        merge_json_to_coco_dataset(out_path, coco_path,image_path,args=args)
+    else:
+        raise Exception("not support dataset type")
+    calculate_dataset_map_by_list(list_path,coco_path,out_path,out_path)
+
 def cal_iou_and_insert_results_for_list(list_file_path,coco_anno_path,new_list_file_dir):
     with open(list_file_path, "rb") as f:
         results = json.load(f)
     dataset = CocoDataset()
     dataset.load_annotations(coco_anno_path)
     bbox_results = dataset.list_json_to_bbox_list2(results)
-    annotations = dataset.coco_to_annotation(len(bbox_results))
+    annotations = dataset.coco_to_annotation()
     _, out, ious = mean_ap.eval_map(bbox_results, annotations)
     mean_ap.iou_insert_results(results, ious)
     with open(os.path.join(new_list_file_dir,"new_list.json"),"w+") as f:
@@ -1277,6 +1328,12 @@ def run_command(args, command, nargs, parser):
             print("\n cal_iou_and_insert_results_for_list [list_file_path] [coco_anno_path] [new_list_file_dir]\n")
         else:
             cal_iou_and_insert_results_for_list(nargs[0],nargs[1],nargs[2])
+    elif command == "calculate-dataset-map":
+        if len(nargs)!=4:
+            parser.print_help()
+            print("\n calculate-dataset-map [det_anno_path] [gt_anno_path] [image_path] [out_path]\n")
+        else:
+            calculate_dataset_map(nargs[0],nargs[1],nargs[2],nargs[3])
     else:
         parser.print_help()
 

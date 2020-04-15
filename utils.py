@@ -6,6 +6,7 @@ import re
 import shutil
 import glob
 import pyprind
+import json
 
 def check_path_exist(path):
     if not os.path.exists(path):
@@ -207,3 +208,43 @@ def sort_list_search_int(li, val):
             return mid
     else:
         return None
+
+def find_dataset_type(anno_path,image_path):
+    check_path_exist(anno_path)
+    check_path_exist(image_path)
+    if path_is_file(anno_path):
+        file_type = os.path.splitext(anno_path)[1]
+        if file_type == ".json":
+            with open(anno_path, "r") as f:
+                di = json.load(f)
+            assert type(di) == dict or type(di) == list
+            if isinstance(di, dict):
+                print("uploading coco annotation file")
+                return "coco"
+            elif isinstance(di, list):
+                print("uploading list annotation file")
+                return "list"
+        else:
+            raise Exception("Only json suffix supported.")
+    else:
+        src_list = os.listdir(anno_path)
+        first_file = src_list[0]
+        file_type = os.path.splitext(first_file)[1]
+        assert file_type in [".xml", ".txt", ".json"]
+        if file_type == ".xml":
+            print("uploading voc dataset")
+            if anno_path.endswith("/"):
+                anno_path = os.path.dirname(anno_path)
+            if image_path.endswith("/"):
+                image_path = os.path.dirname(image_path)
+            path = os.path.dirname(anno_path)
+            path2 = os.path.dirname(image_path)
+            if (path != path2):
+                raise Exception("wrong path.anno path {} not equal with image path {}".format(path, path2))
+            return "voc"
+        elif file_type == ".txt":
+            print("uploading ocr dataset")
+            return "ocr"
+        elif file_type == ".json":
+            print("uploading json dataset")
+            return "json"
