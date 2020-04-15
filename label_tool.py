@@ -428,7 +428,7 @@ def merge_json_to_coco_dataset(json_path,coco_file_path,coco_image_path,prefix="
         if args and not args.ignore_image:
             shutil.copyfile(source_path, os.path.join(coco_image_path, "{}.jpg".format(new_image_id)))
         pbar.update()
-    coco["categories"] = map(lambda x:x[1],sorted([[k,v] for k,v in categories.items()],key=lambda x:x[0]))
+    coco["categories"] = list(map(lambda x:x[1],sorted([[k,v] for k,v in categories.items()],key=lambda x:x[0])))
     with open(coco_file_path, "w") as f:
         f.write(json.dumps(coco, indent=4, separators=(',', ':')))
 
