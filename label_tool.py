@@ -398,11 +398,13 @@ def merge_json_to_coco_dataset(json_path,coco_file_path,coco_image_path,prefix="
         with open("meta.json","r") as f:
             coco = json.load(f)
             coco["images"] = []
+            coco["categories"] = []
             coco["annotations"] = []
     with open(os.path.join(json_path, "list.json"), "r") as f:
         ImgIDs = json.load(f)["ImgIDs"]
     global pbar
     pbar = pyprind.ProgBar(len(ImgIDs),monitor=True,title="converting json to coco")
+    categories = {}
     for ImgID in ImgIDs:
         if not prefix and max_num==0:
             new_image_id = str(ImgID)
@@ -418,12 +420,15 @@ def merge_json_to_coco_dataset(json_path,coco_file_path,coco_image_path,prefix="
             global index
             i["id"] = index
             index += 1
+            if i["category_id"] not in categories:
+                categories[i["category_id"]] = {"id":i["category_id"],"name":i["category_id"],"supercategory":i["category_id"]}
         coco["images"].extend(json_dict["images"])
         coco["annotations"].extend(json_dict["annotations"])
         source_path = os.path.join(json_path, 'images', "{}.jpg".format(ImgID))
         if args and not args.ignore_image:
             shutil.copyfile(source_path, os.path.join(coco_image_path, "{}.jpg".format(new_image_id)))
         pbar.update()
+    coco["categories"] = map(lambda x:x[1],sorted([[k,v] for k,v in categories.items()],key=lambda x:x[0]))
     with open(coco_file_path, "w") as f:
         f.write(json.dumps(coco, indent=4, separators=(',', ':')))
 
