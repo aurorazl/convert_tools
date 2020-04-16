@@ -977,6 +977,7 @@ def calculate_dataset_map(det_anno_path,gt_anno_path,image_path,out_path):
     utils.remove_directiry(out_path_det)
     utils.mkdirs(out_path_det)
     utils.mkdirs(out_path_gt)
+    utils.mkdirs(out_path)
     list_path = os.path.join(out_path_det,"det_list.json")
     coco_path = os.path.join(out_path_gt,"gt_coco.json")
     args.ignore_image = True
