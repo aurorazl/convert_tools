@@ -971,6 +971,7 @@ def calculate_dataset_map(det_anno_path,gt_anno_path,image_path,out_path):
     det_dataset_type = utils.find_dataset_type(det_anno_path, image_path)
     gt_dataset_type = utils.find_dataset_type(gt_anno_path, image_path)
     out_path = os.path.join(out_path,"template_for_build")
+    utils.remove_directiry(out_path)
     utils.mkdirs(out_path)
     list_path = os.path.join(out_path,"det_list.json")
     coco_path = os.path.join(out_path,"gt_coco.json")
