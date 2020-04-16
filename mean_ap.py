@@ -508,6 +508,7 @@ def print_map_summary(mean_ap,
             table_data.append(['mAP', '', '', '', '{:.3f}'.format(mean_ap[one_thr][i])])
             table = AsciiTable(table_data)
             table.inner_footing_row_border = True
+            print("iou thr = {}".format(one_thr).center(30," "))
             print('\n' + table.table)
         TOTAL_MAP.append({"iouThr":one_thr,"data":MAP,"mean_ap":'{:.3f}'.format(mean_ap[one_thr][i])})
     return TOTAL_MAP
