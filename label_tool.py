@@ -74,6 +74,7 @@ def get_class_number(name):
     if name not in class_dict:
         max_index += 1
         class_dict[name] = max_index
+        print("category: {:<20s} ====> {}".format(name,max_index))
         return max_index
     return class_dict[name]
 
@@ -232,7 +233,6 @@ def merge_voc_dataset_to_json_dataset(voc_anno_path,voc_image_path,json_path,pre
     ImgIDs.extend(image_id_list)
     with open(os.path.join(json_path,"list.json"),"w") as f:
         f.write(json.dumps({"ImgIDs":ImgIDs},indent=4, separators=(',', ':')))
-    shutil.copyfile("./meta.json",os.path.join(json_path,"meta.json"))
 
 def merge_json_dataset_to_voc_dataset(json_path,voc_anno_path,voc_image_path,prefix="",args=None):
     args.anno_before_suffix = "json" if not args.anno_before_suffix else args.anno_before_suffix
@@ -970,6 +970,8 @@ def calculate_dataset_map_by_list(list_file_path,coco_anno_path,out_path,new_lis
 def calculate_dataset_map(det_anno_path,gt_anno_path,image_path,out_path):
     det_dataset_type = utils.find_dataset_type(det_anno_path, image_path)
     gt_dataset_type = utils.find_dataset_type(gt_anno_path, image_path)
+    out_path = os.path.join(out_path,"template_for_build")
+    utils.mkdirs(out_path)
     list_path = os.path.join(out_path,"det_list.json")
     coco_path = os.path.join(out_path,"gt_coco.json")
     args.ignore_image = True
