@@ -970,23 +970,27 @@ def calculate_dataset_map_by_list(list_file_path,coco_anno_path,out_path,new_lis
 def calculate_dataset_map(det_anno_path,gt_anno_path,image_path,out_path):
     det_dataset_type = utils.find_dataset_type(det_anno_path, image_path)
     gt_dataset_type = utils.find_dataset_type(gt_anno_path, image_path)
+    out_path_gt = os.path.join(out_path,"template_for_gt")
+    out_path_det = os.path.join(out_path,"template_for_det")
     out_path = os.path.join(out_path,"template_for_build")
-    utils.remove_directiry(out_path)
-    utils.mkdirs(out_path)
-    list_path = os.path.join(out_path,"det_list.json")
-    coco_path = os.path.join(out_path,"gt_coco.json")
+    utils.remove_directiry(out_path_gt)
+    utils.remove_directiry(out_path_det)
+    utils.mkdirs(out_path_det)
+    utils.mkdirs(out_path_gt)
+    list_path = os.path.join(out_path_det,"det_list.json")
+    coco_path = os.path.join(out_path_gt,"gt_coco.json")
     args.ignore_image = True
     if det_dataset_type=="coco":
-        merge_coco_to_json_dataset(det_anno_path, image_path, out_path, args=args)
-        merge_json_to_list(out_path,list_path)
+        merge_coco_to_json_dataset(det_anno_path, image_path, out_path_det, args=args)
+        merge_json_to_list(out_path_det,list_path)
     elif det_dataset_type == "voc":
-        merge_voc_dataset_to_json_dataset(det_anno_path, image_path, out_path, args=args)
-        merge_json_to_list(out_path, list_path)
+        merge_voc_dataset_to_json_dataset(det_anno_path, image_path, out_path_det, args=args)
+        merge_json_to_list(out_path_det, list_path)
     elif det_dataset_type == "ocr":
-        merge_ocr_to_json(det_anno_path, image_path, out_path, args=args)
-        merge_json_to_list(out_path, list_path)
+        merge_ocr_to_json(det_anno_path, image_path, out_path_det, args=args)
+        merge_json_to_list(out_path_det, list_path)
     elif det_dataset_type == "json":
-        merge_json_to_list(out_path,list_path)
+        merge_json_to_list(out_path_det,list_path)
     elif det_dataset_type == "list":
         list_path = det_anno_path
     else:
@@ -994,13 +998,13 @@ def calculate_dataset_map(det_anno_path,gt_anno_path,image_path,out_path):
     if gt_dataset_type=="coco":
         coco_path = gt_anno_path
     elif gt_dataset_type == "voc":
-        merge_voc_dataset_to_json_dataset(gt_anno_path, image_path, out_path, args=args)
-        merge_json_to_coco_dataset(out_path, coco_path,image_path,args=args)
+        merge_voc_dataset_to_json_dataset(gt_anno_path, image_path, out_path_gt, args=args)
+        merge_json_to_coco_dataset(out_path_gt, coco_path,image_path,args=args)
     elif gt_dataset_type == "ocr":
-        merge_ocr_to_json(gt_anno_path, image_path, out_path, args=args)
-        merge_json_to_coco_dataset(out_path, coco_path,image_path,args=args)
+        merge_ocr_to_json(gt_anno_path, image_path, out_path_gt, args=args)
+        merge_json_to_coco_dataset(out_path_gt, coco_path,image_path,args=args)
     elif gt_dataset_type == "json":
-        merge_json_to_coco_dataset(out_path, coco_path,image_path,args=args)
+        merge_json_to_coco_dataset(out_path_gt, coco_path,image_path,args=args)
     else:
         raise Exception("not support dataset type")
     calculate_dataset_map_by_list(list_path,coco_path,out_path,out_path)
