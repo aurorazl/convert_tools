@@ -70,6 +70,7 @@ def upload_model_predict_result(anno_path, project_id, dataset_id, verbose=False
               verbose=verbose)
     target_json_base_path = os.path.join(config["nfs_base_path"], "label/private/predict", dataset_id, project_id)
     cmd = ""
+    cmd += "sudo rm -rf " + os.path.join(config["nfs_base_path"], "label/private/tasks", dataset_id) + ";"
     cmd += "rm -rf " + os.path.join(target_json_base_path, "images") + ";"
     cmd += "mkdir -p " + target_json_base_path + ";"
     cmd += "tar zxf %s -C %s" % (
@@ -91,9 +92,7 @@ def upload_dataset_from_coco(coco_anno_path, image_path, project_id, dataset_id,
         upload_dataset("images", "images", project_id, dataset_id, verbose, ignore_image)
 
 
-def upload_dataset_from_voc(voc_path, project_id, dataset_id, user_id, verbose=False, ignore_image=False, args=None):
-    voc_anno_path = os.path.join(voc_path, "Annotations")
-    voc_image_path = os.path.join(voc_path, "JPEGImages")
+def upload_dataset_from_voc(voc_anno_path, voc_image_path,project_id, dataset_id, user_id, verbose=False, ignore_image=False, args=None):
     utils.check_path_exist(voc_anno_path)
     utils.check_path_exist(voc_image_path)
     out_json_path = os.path.join("./", "template_for_convert")
@@ -187,8 +186,7 @@ def auto_upload_dataset(anno_path, image_path, project_id, dataset_id, user_id, 
     if dataset_type=="coco":
         upload_dataset_from_coco(anno_path, image_path, project_id, dataset_id, user_id, verbose, ignore_image,args)
     elif dataset_type == "voc":
-        path = os.path.dirname(anno_path)
-        upload_dataset_from_voc(path, project_id, dataset_id, user_id, verbose, ignore_image, args)
+        upload_dataset_from_voc(anno_path,image_path, project_id, dataset_id, user_id, verbose, ignore_image, args)
     elif dataset_type == "ocr":
         upload_dataset_from_ocr(anno_path, image_path, project_id, dataset_id, user_id, verbose, ignore_image, args)
     elif dataset_type == "json":
