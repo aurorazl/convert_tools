@@ -981,7 +981,7 @@ def calculate_dataset_map_by_list(list_file_path,coco_anno_path,out_path,new_lis
     with open(os.path.join(out_path,"map.json"),"w+") as f:
         f.write(json.dumps(result, indent=4, separators=(',', ':')))
 
-def calculate_dataset_map(det_anno_path,gt_anno_path,image_path,out_path):
+def calculate_dataset_map(det_anno_path,gt_anno_path,image_path,out_path,args):
     det_dataset_type = utils.find_dataset_type(det_anno_path, image_path)
     gt_dataset_type = utils.find_dataset_type(gt_anno_path, image_path)
     out_path_gt = os.path.join(out_path,"template_for_gt")
