@@ -156,7 +156,7 @@ def one_voc_format_to_json_format(src_path,file_path,image_id):
         index +=1
         json_dict["annotations"].append(
             {"segmentation": [], "area": (xmax - xmin) * (ymax - ymin), "iscrowd": 0, "image_id": image_id,
-             "bbox": [xmin, ymin, xmax - xmin, ymax - ymin], "category_id": get_class_number(name), "id": index}
+             "bbox": [xmin, ymin, xmax - xmin, ymax - ymin], "category_id": get_class_number(name), "id": index,"category_name":"name","supercategory":"name"}
         )
     return json_dict
 
@@ -289,7 +289,9 @@ def merge_voc_dataset_to_coco_dataset(voc_anno_path,voc_image_path,coco_output_p
             coco = json.load(f)
             coco["images"]=[]
             coco["annotations"]=[]
+            coco["categories"] = []
     src_list = os.listdir(voc_anno_path)
+    categories={}
     pbar = pyprind.ProgBar(len(src_list),monitor=True,title="converting voc to coco")
     for one in src_list:
         if gen_pattern.match(one):
@@ -300,11 +302,15 @@ def merge_voc_dataset_to_coco_dataset(voc_anno_path,voc_image_path,coco_output_p
                 max_num += 1
                 new_image_id = prefix+str(max_num)
             json_dict = one_voc_format_to_json_format(voc_anno_path,one,new_image_id)
+            for i in json_dict["annotations"]:
+                if i["category_id"] not in categories:
+                    categories[i["category_id"]] = {"id":i["category_id"],"name":i["category_id"],"supercategory":i["category_id"]}
             coco["images"].extend(json_dict["images"])
             coco["annotations"].extend(json_dict["annotations"])
             if args and not args.ignore_image:
                 shutil.copyfile(os.path.join(voc_image_path, str(image_id) + ".jpg"),os.path.join(coco_image_path,str(new_image_id)+".jpg"))
             pbar.update()
+    coco["categories"] = list(map(lambda x: x[1], sorted([[k, v] for k, v in categories.items()], key=lambda x: x[0])))
     with open(coco_output_path, "w") as f:
         f.write(json.dumps(coco, indent=4, separators=(',', ':')))
 
@@ -375,6 +381,10 @@ def merge_coco_to_json_dataset(coco_file_path,coco_image_path,json_path,prefix="
         for one_anno in annotations:
             one_anno["image_id"] = new_image_id
             one_anno["id"] = new_image_id
+            category_info = utils.find_category_info_by_id(meta_json_dict["categories"],one_anno["category_id"])
+            if category_info:
+                one_anno["category_name"] = category_info["name"]
+                one_anno["supercategory"] = category_info["supercategory"]
         if args and args.use_category_mapping:
             for one_anno in annotations:
                 one_anno["category_id"] = category_map.get(one_anno["category_id"],one_anno["category_id"])
@@ -422,6 +432,10 @@ def merge_json_to_coco_dataset(json_path,coco_file_path,coco_image_path,prefix="
             index += 1
             if i["category_id"] not in categories:
                 categories[i["category_id"]] = {"id":i["category_id"],"name":i["category_id"],"supercategory":i["category_id"]}
+                if "category_name" in i:
+                    categories[i["category_id"]]["name"] = i["category_name"]
+                if "supercategory" in i:
+                    categories[i["category_id"]]["supercategory"] = i["supercategory"]
         coco["images"].extend(json_dict["images"])
         coco["annotations"].extend(json_dict["annotations"])
         source_path = os.path.join(json_path, 'images', "{}.jpg".format(ImgID))
@@ -1009,6 +1023,7 @@ def calculate_dataset_map(det_anno_path,gt_anno_path,image_path,out_path):
     else:
         raise Exception("not support dataset type")
     calculate_dataset_map_by_list(list_path,coco_path,out_path,out_path)
+    return out_path
 
 def cal_iou_and_insert_results_for_list(list_file_path,coco_anno_path,new_list_file_dir):
     with open(list_file_path, "rb") as f:
@@ -1054,7 +1069,7 @@ def merge_ocr_to_json(ocr_anno_path,ocr_image_path,json_path,prefix="",args=None
             index += 1
             json_dict["annotations"].append(
                 {"segmentation":[box], "area": utils.calculate_quadrangle_area(box), "iscrowd": 0, "image_id": args.image_after_prefix + str(new_image_id),
-                 "bbox": [], "category_id": 1, "id": index,"text":text_tag}
+                 "bbox": [], "category_id": 1, "id": index,"text":text_tag,"category_name":"OCR","supercategory":"OCR"}
             )
         dir_file = os.path.join(json_path, "images",args.anno_after_prefix + str(new_image_id) + ".json")
         if args and not args.ignore_image:

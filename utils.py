@@ -248,3 +248,8 @@ def find_dataset_type(anno_path,image_path):
         elif file_type == ".json":
             print("uploading json dataset")
             return "json"
+
+def find_category_info_by_id(category_list,category_id):
+    for one in category_list:
+        if one["category_id"] == category_id:
+            return one
