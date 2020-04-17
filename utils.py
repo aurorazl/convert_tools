@@ -123,13 +123,13 @@ def gen_image_name_list(anno_files_path,image_files_path,json_anno_path,prefix,a
     name_dict = {}
     pb = pyprind.ProgBar(len(src_list), monitor=True,title="counting src path specified prefix {} number".format(prefix))
     if args.anno_before_prefix:
-        gen_pattern = re.compile(r"{}(\d+)\.(xml|json|txt)".format(args.anno_before_prefix))
+        gen_pattern = re.compile(r"({})(\d+)\.(xml|json|txt)".format(args.anno_before_prefix))
     else:
-        gen_pattern = re.compile(r"(\w+)\.(xml|json|txt)")
+        gen_pattern = re.compile(r"(\w*?)(\d+)\.(xml|json|txt)")
     for one in src_list:
         res = gen_pattern.match(one)
         if res:
-            image_id = res.groups()[0]
+            image_id = res.groups()[1]
             # if not check_anno_and_image_both_exist(anno_files_path,image_files_path,image_id,args):
             #     continue
             if  max_num == 0:
