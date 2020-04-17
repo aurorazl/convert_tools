@@ -213,7 +213,7 @@ def upload_map_file(det_anno_path, gt_anno_path,image_path,project_id, dataset_i
     out_json_path = os.path.join("./", "template_for_convert")
     utils.remove_directiry(out_json_path)
     os.system("mkdir %s" % out_json_path)
-    out_json_path = label_tool.calculate_dataset_map(det_anno_path,gt_anno_path,image_path,out_json_path,args)
+    label_tool.calculate_dataset_map(det_anno_path,gt_anno_path,image_path,out_json_path,args)
     label_tool.module_predict_segmentation_list_to_json(os.path.join(out_json_path,"new_list.json"), out_json_path, args.base_category_num)
     with cd(out_json_path):
         upload_map_file_from_det_list_gt_coco(project_id, dataset_id, verbose)

@@ -986,12 +986,10 @@ def calculate_dataset_map(det_anno_path,gt_anno_path,image_path,out_path,args):
     gt_dataset_type = utils.find_dataset_type(gt_anno_path, image_path)
     out_path_gt = os.path.join(out_path,"template_for_gt")
     out_path_det = os.path.join(out_path,"template_for_det")
-    out_path = os.path.join(out_path,"template_for_build")
     utils.remove_directiry(out_path_gt)
     utils.remove_directiry(out_path_det)
     utils.mkdirs(out_path_det)
     utils.mkdirs(out_path_gt)
-    utils.mkdirs(out_path)
     list_path = os.path.join(out_path_det,"det_list.json")
     coco_path = os.path.join(out_path_gt,"gt_coco.json")
     args.ignore_image = True
@@ -1023,7 +1021,6 @@ def calculate_dataset_map(det_anno_path,gt_anno_path,image_path,out_path,args):
     else:
         raise Exception("not support dataset type")
     calculate_dataset_map_by_list(list_path,coco_path,out_path,out_path)
-    return out_path
 
 def cal_iou_and_insert_results_for_list(list_file_path,coco_anno_path,new_list_file_dir):
     with open(list_file_path, "rb") as f:
@@ -1361,7 +1358,7 @@ def run_command(args, command, nargs, parser):
             parser.print_help()
             print("\n calculate-dataset-map [det_anno_path] [gt_anno_path] [image_path] [out_path]\n")
         else:
-            calculate_dataset_map(nargs[0],nargs[1],nargs[2],nargs[3])
+            calculate_dataset_map(nargs[0],nargs[1],nargs[2],nargs[3],args)
     else:
         parser.print_help()
 
