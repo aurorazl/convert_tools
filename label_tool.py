@@ -1029,7 +1029,7 @@ def cal_iou_and_insert_results_for_list(list_file_path,coco_anno_path,new_list_f
     dataset.load_annotations(coco_anno_path)
     bbox_results = dataset.list_json_to_bbox_list2(results)
     annotations = dataset.coco_to_annotation()
-    _, out, ious = mean_ap.eval_map(bbox_results, annotations)
+    _, out, ious = mean_ap.eval_map(bbox_results, annotations,category_info=dataset.category_info)
     mean_ap.iou_insert_results(results, ious)
     with open(os.path.join(new_list_file_dir,"new_list.json"),"w+") as f:
         f.write(json.dumps(results, indent=4, separators=(',', ':')))

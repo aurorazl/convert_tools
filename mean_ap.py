@@ -263,7 +263,7 @@ def eval_map(det_results,
              iou_thr=0.5,
              dataset=None,
              logger=None,
-             nproc=4):
+             nproc=4,category_info=None):
     """Evaluate mAP of a dataset.
     Args:
         det_results (list[list]): [[cls1_det, cls2_det, ...], ...].
@@ -383,7 +383,7 @@ def eval_map(det_results,
             mean_ap[thr] = np.array(aps).mean().item() if aps else 0.0
     print("done calculate ious for iou_thr={}.............".format(str(iou_thr)))
     outdata = print_map_summary(
-        mean_ap, eval_results, iou_thr, dataset, area_ranges, logger=logger)
+        mean_ap, eval_results, iou_thr, dataset, area_ranges, logger=logger,category_info)
 
     return mean_ap, outdata,det_iou
 
@@ -437,7 +437,7 @@ def print_map_summary(mean_ap,
                       iou_thrs,
                       dataset=None,
                       scale_ranges=None,
-                      logger=None):
+                      logger=None,category_info=None):
     """Print mAP and results of each class.
     A table will be printed to show the gts/dets/recall/AP of each class and
     the mAP.
@@ -497,7 +497,7 @@ def print_map_summary(mean_ap,
                     label_names[j], int(num_gts[index,i, j]), int(results[one_thr][j]['num_dets']),
                     '{:.3f}'.format(float(recalls[index,i, j])), '{:.3f}'.format(float(aps[index,i, j]))
                 ]
-                one_map["category"] = label_names[j]
+                one_map["category"] = category_info[label_names[j]-1]["name"] if category_info else label_names[j]
                 one_map["gt_nums"] = int(num_gts[index,i, j])
                 one_map["det_nums"] = int(results[one_thr][j]['num_dets'])
                 one_map["recall"] = '{:.3f}'.format(float(recalls[index,i, j]))
@@ -557,6 +557,7 @@ class CocoDataset(object):
             cat_id: i + 1
             for i, cat_id in enumerate(self.cat_ids)
         }
+        self.category_info = self.coco.dataset.get('categories')
         self.img_ids = self.coco.getImgIds()
         self.img_infos = []
         for i in self.img_ids:
