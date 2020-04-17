@@ -137,7 +137,7 @@ def gen_image_name_list(anno_files_path,image_files_path,json_anno_path,prefix,a
             else:
                 max_num += 1
                 new_image_id = max_num
-            name_dict[new_image_id] = image_id
+            name_dict[new_image_id] = res.groups()[0] + res.groups()[1]
         pb.update()
     print("start to process %s picture" % len(name_dict))
     return name_dict
