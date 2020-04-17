@@ -972,7 +972,7 @@ def calculate_dataset_map_by_list(list_file_path,coco_anno_path,out_path,new_lis
     bbox_results = dataset.list_json_to_bbox_list2(results)
     annotations = dataset.coco_to_annotation()
     iou_thrs = [0.5,0.6,0.7,0.8,0.9]
-    _, out,ious = mean_ap.eval_map(bbox_results, annotations,iou_thr=iou_thrs)
+    _, out,ious = mean_ap.eval_map(bbox_results, annotations,iou_thr=iou_thrs,category_info=dataset.category_info)
     mean_ap.iou_insert_results(results, ious)
     with open(os.path.join(new_list_file_dir,"new_list.json"),"w+") as f:
         f.write(json.dumps(results, indent=4, separators=(',', ':')))
