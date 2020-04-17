@@ -1050,7 +1050,7 @@ def merge_ocr_to_json(ocr_anno_path,ocr_image_path,json_path,prefix="",args=None
     # args.anno_after_prefix = "img_" if not args.anno_after_prefix else args.anno_after_prefix
     # args.image_before_prefix = "img_" if not args.image_before_prefix else args.image_before_prefix
     # args.image_after_prefix = "img_" if not args.image_after_prefix else args.image_after_prefix
-    # args.anno_before_suffix = "txt" if not args.anno_before_suffix else args.anno_before_suffix
+    args.anno_before_suffix = "txt" if not args.anno_before_suffix else args.anno_before_suffix
     json_anno_path = os.path.join(json_path, "images")
     utils.mkdirs(json_anno_path)
     utils.check_anno_image_number(ocr_anno_path,ocr_image_path,args)
