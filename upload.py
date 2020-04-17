@@ -338,6 +338,7 @@ if __name__ == '__main__':
     parser.add_argument("--image-after-prefix", "-iap", default="", help="after image prefix", action="store")
     parser.add_argument("--image-before-suffix", "-ibs", default="jpg", help="before image suffix", action="store")
     parser.add_argument("--image-after-suffix", "-ias", default="jpg", help="after image suffix", action="store")
+    parser.add_argument("--ignore-exists", default=True, help="after image suffix", action="store_true")
     args = parser.parse_args()
     command = args.command
     nargs = args.nargs
