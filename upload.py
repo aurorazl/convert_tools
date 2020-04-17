@@ -100,7 +100,7 @@ def upload_dataset_from_voc(voc_anno_path, voc_image_path,project_id, dataset_id
     os.system("mkdir %s" % out_json_path)
     label_tool.merge_voc_dataset_to_json_dataset(voc_anno_path, voc_image_path, out_json_path, args=args)
     label_tool.generate_commit_json(out_json_path, user_id, args.base_category_num)
-    label_tool.find_coco_dataset_category_ids(voc_anno_path, out_json_path)
+    label_tool.find_voc_dataset_category_ids(voc_anno_path, out_json_path)
     with cd(out_json_path):
         upload_dataset("images", "images", project_id, dataset_id, verbose, ignore_image)
 
