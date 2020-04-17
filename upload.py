@@ -202,6 +202,7 @@ def upload_map_file_from_det_list_gt_coco(project_id, dataset_id,verbose=True):
     utils.scp(config["identity_file"], "iou.json", config["nfs_base_path"], config["user"], config["host"],verbose=verbose)
     target_json_base_path = os.path.join(config["nfs_base_path"], "label/private/tasks", dataset_id, project_id)
     cmd = ""
+    cmd += "sudo rm -rf " + os.path.join(config["nfs_base_path"], "label/private/tasks", dataset_id) + ";"
     cmd += "rm -rf " + os.path.join(target_json_base_path, "map.json") + ";"
     cmd += "rm -rf " + os.path.join(target_json_base_path, "iou.json") + ";"
     cmd += "mkdir -p " + target_json_base_path + ";"
