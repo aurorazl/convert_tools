@@ -130,8 +130,8 @@ def gen_image_name_list(anno_files_path,image_files_path,json_anno_path,prefix,a
         res = gen_pattern.match(one)
         if res:
             image_id = res.groups()[0]
-            if not check_anno_and_image_both_exist(anno_files_path,image_files_path,image_id,args):
-                continue
+            # if not check_anno_and_image_both_exist(anno_files_path,image_files_path,image_id,args):
+            #     continue
             if  max_num == 0:
                 new_image_id = int(image_id)
             else:
