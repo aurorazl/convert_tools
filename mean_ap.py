@@ -496,7 +496,7 @@ def print_map_summary(mean_ap,
                     label_names[j], int(num_gts[index,i, j]), int(results[one_thr][j]['num_dets']),
                     '{:.3f}'.format(float(recalls[index,i, j])), '{:.3f}'.format(float(aps[index,i, j]))
                 ]
-                one_map["category"] = category_info[label_names[j]-1]["name"] if category_info else label_names[j]
+                one_map["category"] = category_info[int(label_names[j])-1]["name"] if category_info else label_names[j]
                 one_map["gt_nums"] = int(num_gts[index,i, j])
                 one_map["det_nums"] = int(results[one_thr][j]['num_dets'])
                 one_map["recall"] = '{:.3f}'.format(float(recalls[index,i, j]))
