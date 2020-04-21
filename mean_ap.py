@@ -382,8 +382,7 @@ def eval_map(det_results,
                     aps.append(cls_result['ap'])
             mean_ap[thr] = np.array(aps).mean().item() if aps else 0.0
     print("done calculate ious for iou_thr={}.............".format(str(iou_thr)))
-    outdata = print_map_summary(
-        mean_ap, eval_results, iou_thr, dataset, area_ranges, logger=logger,category_info=category_info)
+    outdata = print_map_summary( mean_ap, eval_results, iou_thr, dataset, area_ranges, logger=logger,category_info=category_info)
 
     return mean_ap, outdata,det_iou
 

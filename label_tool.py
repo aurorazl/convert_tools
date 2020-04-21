@@ -789,6 +789,8 @@ def generate_commit_json(json_path,userId,base_category_num=0):
         for i in json_dict["annotations"]:
             if int(i["category_id"])+base_category_num not in commit_json[i["image_id"]]["categoryIds"]:
                 commit_json[i["image_id"]]["categoryIds"].append(int(i["category_id"])+base_category_num)
+            if "level" in json_dict["images"][0]:
+                commit_json[i["image_id"]]["level"] = json_dict["images"][0]["level"]
         pbar.update()
     with open(os.path.join(json_path, "commit.json"), "w") as f:
         f.write(json.dumps(commit_json, indent=4, separators=(',', ':')))

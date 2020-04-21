@@ -18,15 +18,20 @@ identity_file: DataConvert绝对路径/id_rsa   # 连接到数据平台服务器
     ``` 
     uuid格式：04F3662A-C848-46D2-B21C-6A68D591AC12
     ```
-
-### 如何上传(更新)模型预测的数据集（会先清空之前的预测结果）
-```shell script
-python upload.py upload-map-file [模型预测结果文件路径] [人工标注文件路径] [标注对应的图片路径] [项目uuid] [数据集的uuid]
-```
-
+   
 ### 如何上传新的数据集
 ```shell script
 python upload.py upload-dataset [数据集标注文件路径] [数据集图片路径] [项目uuid] [数据集的uuid] [用户uid]
+```
+
+### 如何上传(更新)模型预测的数据集（会先清空之前的预测结果）
+```shell script
+python upload.py upload-prediction [模型预测结果文件路径] [标注对应的图片路径] [项目uuid] [数据集的uuid]
+```
+
+### 如何上传(更新)模型预测的数据集（会先清空之前的预测结果）
+```shell script
+python upload.py upload-prediction-with-map [模型预测结果文件路径] [人工标注文件路径] [标注对应的图片路径] [项目uuid] [数据集的uuid]
 ```
  
 

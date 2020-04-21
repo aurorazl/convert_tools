@@ -273,7 +273,7 @@ def run_command(args, command, nargs, parser):
             print("upload_model_predict_result_from_ocr [ocr_anno_path] [ocr_image_path] [project_id] [dataset_id]")
         else:
             upload_model_predict_result_from_ocr(nargs[0], nargs[1], nargs[2], nargs[3], args.verbose, args)
-    elif command == "upload-prediction-without-map":
+    elif command == "upload-prediction":
         if len(nargs) != 4:
             parser.print_help()
             print("upload-prediction [anno_path] [image_path] [project_id] [dataset_id]")
@@ -285,10 +285,10 @@ def run_command(args, command, nargs, parser):
             print("upload-dataset [anno_path] [image_path] [project_id] [dataset_id] [uid]")
         else:
             auto_upload_dataset(nargs[0], nargs[1], nargs[2], nargs[3], nargs[4], args.verbose, args.ignore_image, args)
-    elif command == "upload-prediction":
+    elif command == "upload-prediction-with-map":
         if len(nargs) != 5:
             parser.print_help()
-            print("upload-prediction [det_anno_path] [gt_anno_path] [image_path] [project_id] [dataset_id]")
+            print("upload-prediction-with-map [det_anno_path] [gt_anno_path] [image_path] [project_id] [dataset_id]")
         else:
             upload_map_file(nargs[0], nargs[1], nargs[2], nargs[3], nargs[4],args.verbose,args)
     else:
