@@ -254,5 +254,5 @@ def find_dataset_type(anno_path,image_path):
 
 def find_category_info_by_id(category_list,category_id):
     for one in category_list:
-        if one["category_id"] == category_id:
+        if one["id"] == category_id:
             return one
