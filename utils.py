@@ -47,9 +47,10 @@ def SSH_exec_cmd_with_output(identity_file, user,host,port,cmd, supressWarning =
         return ""
     if supressWarning:
         cmd += " 2>/dev/null"
-    execmd = """ssh -o "StrictHostKeyChecking no" -o "UserKnownHostsFile=/dev/null" -i %s "%s@%s" "%s" """ % (identity_file, user, host, cmd )
     if port:
-        execmd += "-p %s"%(port,)
+        execmd = """ssh -p %s -o "StrictHostKeyChecking no" -o "UserKnownHostsFile=/dev/null" -i %s "%s@%s" "%s" """ % (port,identity_file, user, host, cmd)
+    else:
+        execmd = """ssh -o "StrictHostKeyChecking no" -o "UserKnownHostsFile=/dev/null" -i %s "%s@%s" "%s" """ % (identity_file, user, host, cmd)
     if verbose:
         print(execmd)
     try:
