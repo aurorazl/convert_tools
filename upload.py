@@ -57,7 +57,7 @@ def upload_dataset(image_path, anno_path, project_id, dataset_id, verbose=False,
     os.path.join(config["nfs_base_path"], config["json_tar_name"]), target_json_base_path) + ";"
     cmd += "mv %s %s" % (os.path.join(config["nfs_base_path"], "commit.json"), target_json_base_path) + ";"
     cmd += "mv %s %s" % (os.path.join(config["nfs_base_path"], "category.json"), target_json_base_path) + ";"
-    utils.SSH_exec_cmd_with_output(config["identity_file"], config["user"], config["host"], cmd, verbose=verbose)
+    utils.SSH_exec_cmd_with_output(config["identity_file"], config["user"], config["host"], config["port"],cmd, verbose=verbose)
 
 
 def upload_model_predict_result(anno_path, project_id, dataset_id, verbose=False):
@@ -74,7 +74,7 @@ def upload_model_predict_result(anno_path, project_id, dataset_id, verbose=False
     cmd += "mkdir -p " + target_json_base_path + ";"
     cmd += "tar zxf %s -C %s" % (
     os.path.join(config["nfs_base_path"], config["json_tar_name"]), target_json_base_path) + ";"
-    utils.SSH_exec_cmd_with_output(config["identity_file"], config["user"], config["host"], cmd, verbose=verbose)
+    utils.SSH_exec_cmd_with_output(config["identity_file"], config["user"], config["host"], config["port"], cmd, verbose=verbose)
 
 
 def upload_dataset_from_coco(coco_anno_path, image_path, project_id, dataset_id, user_id, verbose=False,
@@ -204,7 +204,7 @@ def upload_map_file_from_det_list_gt_coco(project_id, dataset_id,verbose=True):
     cmd += "mkdir -p " + target_json_base_path + ";"
     cmd += "mv %s %s" % (os.path.join(config["nfs_base_path"], "map.json"), target_json_base_path) + ";"
     cmd += "mv %s %s" % (os.path.join(config["nfs_base_path"], "iou.json"), target_json_base_path) + ";"
-    utils.SSH_exec_cmd_with_output(config["identity_file"], config["user"], config["host"], cmd, verbose=verbose)
+    utils.SSH_exec_cmd_with_output(config["identity_file"], config["user"], config["host"],  config["port"],cmd, verbose=verbose)
 
 def upload_map_file(det_anno_path, gt_anno_path,image_path,project_id, dataset_id, verbose=True,args=None):
     out_json_path = os.path.join("./", "template_for_convert")

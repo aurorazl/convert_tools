@@ -42,12 +42,14 @@ def scp (identity_file, source, target, user, host, port,verbose = False):
         output = "Return code: " + str(e.returncode) + ", output: " + e.output.strip()
     print(output)
 
-def SSH_exec_cmd_with_output(identity_file, user,host,cmd, supressWarning = False,verbose=False):
+def SSH_exec_cmd_with_output(identity_file, user,host,port,cmd, supressWarning = False,verbose=False):
     if len(cmd)==0:
         return ""
     if supressWarning:
         cmd += " 2>/dev/null"
     execmd = """ssh -o "StrictHostKeyChecking no" -o "UserKnownHostsFile=/dev/null" -i %s "%s@%s" "%s" """ % (identity_file, user, host, cmd )
+    if port:
+        execmd += "-p %s"%(port,)
     if verbose:
         print(execmd)
     try:
