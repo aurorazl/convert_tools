@@ -29,8 +29,11 @@ def path_is_file(path):
         return True
     return False
 
-def scp (identity_file, source, target, user, host, verbose = False):
-    cmd = 'scp -q -o "StrictHostKeyChecking no" -o "UserKnownHostsFile=/dev/null" -i %s -r "%s" "%s@%s:%s"' % (identity_file, source, user, host, target)
+def scp (identity_file, source, target, user, host, port,verbose = False):
+    if port:
+        cmd = 'scp -P %s -q -o "StrictHostKeyChecking no" -o "UserKnownHostsFile=/dev/null" -i %s -r "%s" "%s@%s:%s"' % (port,identity_file, source, user, host, target)
+    else:
+        cmd = 'scp -q -o "StrictHostKeyChecking no" -o "UserKnownHostsFile=/dev/null" -i %s -r "%s" "%s@%s:%s"' % (identity_file, source, user, host, target)
     if verbose:
         print(cmd)
     try:

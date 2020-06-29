@@ -23,8 +23,8 @@ def upload_dataset(image_path, anno_path, project_id, dataset_id, verbose=False,
         os.system(cmd)
         utils.check_path_exist(config["image_tar_name"])
         utils.scp(config["identity_file"], config["image_tar_name"], config["nfs_base_path"], config["user"],
-                  config["host"], verbose)
-        utils.scp(config["identity_file"], "list.json", config["nfs_base_path"], config["user"], config["host"],
+                  config["host"], config["port"],verbose)
+        utils.scp(config["identity_file"], "list.json", config["nfs_base_path"], config["user"], config["host"],config["port"],
                   verbose)
 
     utils.remove_local_file(config["json_tar_name"])
@@ -32,10 +32,10 @@ def upload_dataset(image_path, anno_path, project_id, dataset_id, verbose=False,
     if verbose:
         print(cmd)
     os.system(cmd)
-    utils.scp(config["identity_file"], config["json_tar_name"], config["nfs_base_path"], config["user"], config["host"],
+    utils.scp(config["identity_file"], config["json_tar_name"], config["nfs_base_path"], config["user"], config["host"],config["port"],
               verbose)
-    utils.scp(config["identity_file"], "commit.json", config["nfs_base_path"], config["user"], config["host"], verbose)
-    utils.scp(config["identity_file"], "category.json", config["nfs_base_path"], config["user"], config["host"], verbose)
+    utils.scp(config["identity_file"], "commit.json", config["nfs_base_path"], config["user"], config["host"],config["port"], verbose)
+    utils.scp(config["identity_file"], "category.json", config["nfs_base_path"], config["user"], config["host"], config["port"],verbose)
     target_image_base_path = os.path.join(config["nfs_base_path"], "label/public/tasks", dataset_id)
     target_json_base_path = os.path.join(config["nfs_base_path"], "label/private/tasks", dataset_id, project_id)
     cmd = ""
@@ -66,7 +66,7 @@ def upload_model_predict_result(anno_path, project_id, dataset_id, verbose=False
     if verbose:
         print(cmd)
     os.system(cmd)
-    utils.scp(config["identity_file"], config["json_tar_name"], config["nfs_base_path"], config["user"], config["host"],
+    utils.scp(config["identity_file"], config["json_tar_name"], config["nfs_base_path"], config["user"], config["host"],config["port"],
               verbose=verbose)
     target_json_base_path = os.path.join(config["nfs_base_path"], "label/private/predict", dataset_id, project_id)
     cmd = ""
@@ -195,8 +195,8 @@ def auto_upload_dataset(anno_path, image_path, project_id, dataset_id, user_id, 
 
 def upload_map_file_from_det_list_gt_coco(project_id, dataset_id,verbose=True):
     utils.check_path_exist("map.json")
-    utils.scp(config["identity_file"], "map.json", config["nfs_base_path"], config["user"], config["host"],verbose=verbose)
-    utils.scp(config["identity_file"], "iou.json", config["nfs_base_path"], config["user"], config["host"],verbose=verbose)
+    utils.scp(config["identity_file"], "map.json", config["nfs_base_path"], config["user"], config["host"],config["port"],verbose=verbose)
+    utils.scp(config["identity_file"], "iou.json", config["nfs_base_path"], config["user"], config["host"],config["port"],verbose=verbose)
     target_json_base_path = os.path.join(config["nfs_base_path"], "label/private/tasks", dataset_id, project_id)
     cmd = ""
     cmd += "rm -rf " + os.path.join(target_json_base_path, "map.json") + ";"
