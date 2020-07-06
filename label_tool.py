@@ -1072,7 +1072,7 @@ def merge_ocr_to_json(ocr_anno_path,ocr_image_path,json_path,prefix="",args=None
             )
         dir_file = os.path.join(json_path, "images",args.anno_after_prefix + str(new_image_id) + ".json")
         if args and not args.ignore_image:
-            shutil.copyfile(os.path.join(ocr_image_path, args.image_before_prefix + str(old_image_id) + ".jpg"),os.path.join(json_anno_path,args.image_after_prefix +  str(new_image_id) + ".jpg"))
+            shutil.copyfile(os.path.join(ocr_image_path, args.image_before_prefix + str(new_image_id) + ".jpg"),os.path.join(json_anno_path,args.image_after_prefix +  str(new_image_id) + ".jpg"))
         with open(dir_file, "w+") as f:
             f.write(json.dumps(json_dict, indent=4, separators=(',', ':')))
         pbar.update()
