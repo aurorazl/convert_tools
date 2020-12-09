@@ -33,5 +33,5 @@ python upload.py upload-prediction [模型预测结果文件路径] [标注对�
 ```shell script
 python upload.py upload-prediction-with-map [模型预测结果文件路径] [人工标注文件路径] [标注对应的图片路径] [项目uuid] [数据集的uuid]
 ```
- 
+
 

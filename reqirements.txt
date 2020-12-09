@@ -7,3 +7,6 @@ Shapely
 Scikit-Image
 opencv-python
 pyyaml
+requests
+terminaltables
+mmcv

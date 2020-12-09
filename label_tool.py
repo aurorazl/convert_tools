@@ -4,6 +4,7 @@ import os
 import json
 import random
 import re
+import io
 import pyprind
 import shutil
 import argparse
@@ -23,6 +24,7 @@ from PIL import Image
 from PIL import ImageDraw
 import matplotlib.pyplot as plt
 import cv2
+
 import utils
 import glob
 import requests
@@ -398,6 +400,27 @@ def merge_coco_to_json_dataset(coco_file_path,coco_image_path,json_path,prefix="
     with open(os.path.join(json_path, "list.json") , "w") as f:
         f.write(json.dumps({"ImgIDs":new_image_id_list},indent=4, separators=(',', ':')))
 
+def show_coco_anno_on_picture(coco_path,image_path):
+    import matplotlib
+    matplotlib.use('TkAgg')
+    coco = COCO(coco_path)
+    cats = coco.loadCats(coco.getCatIds())
+    nms = [cat['name'] for cat in cats]
+    nms = set([cat['supercategory'] for cat in cats])
+    catIds = coco.getCatIds(catNms=['person', 'dog', 'skateboard'])
+    catIds = [o["id"] for o in cats]
+    imgIds = coco.getImgIds(catIds=catIds)
+    img = coco.loadImgs(imgIds[np.random.randint(0, len(imgIds))])[0]
+    import skimage.io as io
+    I = io.imread(os.path.join(image_path,img['file_name']))
+    plt.axis('off')
+    plt.imshow(I)
+    # plt.show()
+    annIds = coco.getAnnIds(imgIds=img['id'], catIds=catIds, iscrowd=None)
+    anns = coco.loadAnns(annIds)
+    coco.showAnns(anns)
+    plt.show()
+
 def merge_json_to_coco_dataset(json_path,coco_file_path,coco_image_path,prefix="",args=None):
     max_num = 0
     utils.mkdirs(coco_image_path)
@@ -416,6 +439,8 @@ def merge_json_to_coco_dataset(json_path,coco_file_path,coco_image_path,prefix="
     pbar = pyprind.ProgBar(len(ImgIDs),monitor=True,title="converting json to coco")
     categories = {}
     for ImgID in ImgIDs:
+        if not os.path.exists(os.path.join(json_path, 'images', "{}.json".format(ImgID))):
+            continue
         if not prefix and max_num==0:
             new_image_id = ImgID
         else:
@@ -425,6 +450,7 @@ def merge_json_to_coco_dataset(json_path,coco_file_path,coco_image_path,prefix="
             json_dict = json.load(f)
         json_dict["images"][0]["file_name"] = "{}.jpg".format(new_image_id)
         json_dict["images"][0]["id"] = new_image_id
+        categories_total = json_dict.get("categories")
         for i in json_dict["annotations"]:
             i["image_id"] = new_image_id
             global index
@@ -436,6 +462,16 @@ def merge_json_to_coco_dataset(json_path,coco_file_path,coco_image_path,prefix="
                     categories[i["category_id"]]["name"] = i["category_name"]
                 if "supercategory" in i:
                     categories[i["category_id"]]["supercategory"] = i["supercategory"]
+            if categories_total:
+                categories[i["category_id"]]["name"] = categories_total[i["category_id"]]["name"]
+                categories[i["category_id"]]["supercategory"] = categories_total[i["category_id"]]["supercategory"]
+            if "area" not in i:
+                if i["segmentation"]:
+                    i["area"] = int(mask.area(i["segmentation"]))
+                if i["bbox"]:
+                    i["area"] = i["bbox"][2] * i["bbox"][3]
+            if "iscrowd" not in i:
+                i["iscrowd"] = 0
         coco["images"].extend(json_dict["images"])
         coco["annotations"].extend(json_dict["annotations"])
         source_path = os.path.join(json_path, 'images', "{}.jpg".format(ImgID))
@@ -1168,6 +1204,7 @@ def find_ocr_dataset_category_ids(out_path):
     with open(os.path.join(out_path,"category.json"),"w+") as f:
         f.write(json.dumps({"categories":[{"id":1,"name":"OCR","supercategory":"OCR","type":"bbox"}]}, indent=4, separators=(',', ':')))
 
+
 def run_command(args, command, nargs, parser):
     if command == "json-to-voc":
         if len(nargs) != 2:
@@ -1361,6 +1398,12 @@ def run_command(args, command, nargs, parser):
             print("\n calculate-dataset-map [det_anno_path] [gt_anno_path] [image_path] [out_path]\n")
         else:
             calculate_dataset_map(nargs[0],nargs[1],nargs[2],nargs[3],args)
+    elif command == "show_coco_anno_on_picture":
+        if len(nargs)!=2:
+            parser.print_help()
+            print("\n show_coco_anno_on_picture [coco_path] [image_path]\n")
+        else:
+            show_coco_anno_on_picture(nargs[0],nargs[1])
     else:
         parser.print_help()
 
